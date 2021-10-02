@@ -20,7 +20,7 @@ def one_of(*args: Var) -> Var:
     parts = []
     for idx in range(len(args)):
         parts.append(
-            multi_and(a if i == idx else a.negate() for a, i in enumerate(args))
+            multi_and(a if i == idx else a.negate() for i, a in enumerate(args))
         )
     return multi_or(*parts)
 
