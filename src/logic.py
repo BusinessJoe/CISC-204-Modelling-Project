@@ -1,3 +1,4 @@
+"""This module implements useful logic operations"""
 import operator
 from functools import reduce
 from nnf import Var
