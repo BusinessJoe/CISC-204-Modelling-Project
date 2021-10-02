@@ -16,7 +16,7 @@ def build_2d_proposition_dict(size: tuple[int, int], prefix: str) -> dict[Coord,
 
 def all_coords(size: tuple[int, int]):
     """Returns an iterator containing all coordinates in a grid of the given size"""
-    return product(size, repeat=2)
+    return product(range(size[1]), range(size[0]))
 
 
 if __name__ == "__main__":
