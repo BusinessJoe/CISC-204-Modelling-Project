@@ -3,7 +3,7 @@ import itertools
 from .theory import CosmicExpressTheory
 
 
-def read_file(file: TextIO) -> CosmicExpressTheory:
+def read_file(file: TextIO) -> tuple[Encoding, Any]:
     # Reverse the order of rows since row 0 refers to the bottom row
     rows = list(reversed([line.rstrip("\n") for line in file]))
 
