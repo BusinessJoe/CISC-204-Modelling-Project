@@ -52,13 +52,15 @@ class CosmicExpressTheory:
 
         for x, y in helpers.all_coords(self.size):
 
-            # Each tile can only be an alien, house, obstacle, rail, or nothing.
+            # Each tile can only be an alien, house, obstacle, regular rail, special rail, or nothing.
             self.theory.add_constraint(
                 logic.one_of_or_none(
                     self.props["A"][x, y],
                     self.props["H"][x, y],
                     self.props["O"][x, y],
                     self.props["R"][x, y],
+                    self.props["SR"][x, y],
+                    self.props["ER"][x, y],
                 )
             )
 
@@ -121,3 +123,19 @@ class CosmicExpressTheory:
                         *(self.props[f"R{io}{d}"][x, y] for d in "NESW")
                     )
                 )
+
+            for direction, opposite, offset in zip(
+                "NESW", "SWNE", ((0, 1), (1, 0), (0, -1), (-1, 0))
+            ):
+                offset_coords = (x + offset[0], y + offset[1])
+                if offset_coords in self.props[f"RI{opposite}"]:
+                    self.theory.add_constraint(
+                        logic.implication(
+                            self.props[f"RO{direction}"][x, y],
+                            logic.one_of(
+                                self.props[f"RI{opposite}"][offset_coords],
+                                self.props["SR"][offset_coords],
+                                self.props["ER"][offset_coords],
+                            ),
+                        )
+                    )
