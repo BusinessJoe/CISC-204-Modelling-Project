@@ -13,7 +13,7 @@ def multi_or(*args: Var) -> Var:
 
 
 def multi_and(*args: Var) -> Var:
-    return reduce(operator.__or__, args)
+    return reduce(operator.__and__, args)
 
 
 def one_of(*args: Var) -> Var:
@@ -25,5 +25,9 @@ def one_of(*args: Var) -> Var:
     return multi_or(*parts)
 
 
+def none_of(*args: Var) -> Var:
+    return multi_and(*(a.negate() for a in args))
+
+
 def one_of_or_none(*args: Var) -> Var:
-    return one_of(*args) | multi_and(a.negate() for a in args)
+    return one_of(*args) | multi_and(*(a.negate() for a in args))
