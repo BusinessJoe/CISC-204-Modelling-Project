@@ -1,4 +1,3 @@
-
 from nnf import And, dsharp, NNF, config
 
 
@@ -28,11 +27,11 @@ class Encoding(object):
         assert isinstance(c, NNF), "Constraints need to be of type NNF"
         self.constraints.append(c)
 
-    @config(sat_backend="kissat")
+    @config(sat_backend="pysat")
     def is_satisfiable(self):
         return And(self.constraints).satisfiable()
 
-    @config(sat_backend="kissat")
+    @config(sat_backend="pysat")
     def solve(self):
         return And(self.constraints).solve()
 
@@ -45,7 +44,9 @@ class Encoding(object):
         if not T.satisfiable():
             return 0
 
-        return dsharp.compile(T.to_CNF(), executable='bin/dsharp', smooth=True).model_count()
+        return dsharp.compile(
+            T.to_CNF(), executable="bin/dsharp", smooth=True
+        ).model_count()
 
     def likelihood(self, lit):
         return self.count_solutions([lit]) / self.count_solutions()
