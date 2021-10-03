@@ -1,6 +1,7 @@
-from typing import TextIO
-import itertools
+from typing import Any, TextIO
+from .lib204 import Encoding
 from .theory import CosmicExpressTheory
+from . import logic
 
 
 def read_file(file: TextIO) -> tuple[Encoding, Any]:
@@ -21,26 +22,31 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
     starting_rail = None
     ending_rail = None
     rails = []
+    empties = []
     for y, row in enumerate(rows):
         for x, char in enumerate(row):
             if char == "#":
                 obstacles.append((x, y))
 
-            if char == "I":
+            elif char == "I":
                 if not starting_rail:
                     starting_rail = (x, y)
                 else:
                     raise RuntimeError("Found more than one starting rail")
 
-            if char == "O":
+            elif char == "O":
                 if not ending_rail:
                     ending_rail = (x, y)
                 else:
                     raise RuntimeError("Found more than one ending rail")
 
-            rail = parse_rail(char)
-            if rail:
-                rails.append((rail, (x, y)))
+            else:
+                rail = parse_rail(char)
+                if rail:
+                    rails.append((rail, (x, y)))
+                else:
+                    empties.append((x, y))
+
     # Check that starting rail and ending rail were defined
     if not starting_rail:
         raise RuntimeError("No starting rail found")
@@ -61,8 +67,19 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
         x, y = rail[1]
         theory.add_constraint(props[f"RI{i}"][x, y])
         theory.add_constraint(props[f"RO{o}"][x, y])
+    for empty in empties:
+        theory.add_constraint(
+            logic.none_of(
+                props["A"][empty],
+                props["H"][empty],
+                props["O"][empty],
+                props["R"][empty],
+                props["SR"][empty],
+                props["ER"][empty],
+            )
+        )
 
-    return theory
+    return theory, props
 
 
 def parse_rail(char):
@@ -110,4 +127,6 @@ def get_special_rail(rail_type, x, y, num_rows, num_cols):
 
 if __name__ == "__main__":
     with open("data/test1.ce") as f:
-        read_file(f)
+        T, _ = read_file(f)
+
+    T.solve()
