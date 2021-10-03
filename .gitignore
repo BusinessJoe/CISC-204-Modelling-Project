@@ -3,3 +3,4 @@ unix_venv/
 .vscode/
 __pycache__/
 dsharp/
+bin/
