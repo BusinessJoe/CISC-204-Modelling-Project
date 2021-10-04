@@ -5,7 +5,7 @@ from src.gui.tiles import Alien, Empty, Entrance, Exit, House, Obstacle, Rail
 
 
 class TileSettings(tk.Frame):
-    def __init__(self, parent, handle_import, handle_export, *args, **kwargs):
+    def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.tile_type_string = tk.StringVar()
 
@@ -43,13 +43,7 @@ class TileSettings(tk.Frame):
         )
         self.page.pack()
 
-        self.import_ = tk.Button(self, text="Import", command=handle_import)
-        self.import_.pack()
-        self.export = tk.Button(self, text="Export", command=handle_export)
-        self.export.pack()
-
     def handle_click(self):
-        print("selected", self.tile_type_string.get())
         self.page.select(self.tile_type_string.get())
 
     def get_tile(self, parent):
@@ -59,9 +53,7 @@ class TileSettings(tk.Frame):
         else:
             args, kwargs = tuple(), dict()
 
-        print(cls, args, kwargs)
         tile = cls(parent, *args, **kwargs)
-        print(tile)
         return tile
 
 
@@ -80,7 +72,6 @@ class AlienSettings(TileSpecificSettings):
         self.entry.pack()
 
     def get_args_and_kwargs(self):
-        print(self.color.get())
         return tuple(), {"color": int(self.color.get())}
 
 

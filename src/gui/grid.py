@@ -27,10 +27,9 @@ class GridDisplay(tk.Frame):
 
     def set_grid_size(self, size):
         # Prune grid
-        for x, y in self.grid_items:
+        for x, y in list(self.grid_items):
             if x >= size[1] or y >= size[0]:
-                self.grid_items[x, y].destroy()
-                del self.grid_items[x, y]
+                self.grid_items.pop((x, y)).destroy()
 
         # Expand grid
         for x in range(size[1]):
@@ -39,6 +38,7 @@ class GridDisplay(tk.Frame):
                     self.grid_items[x, y] = Empty(self)
 
         self.size = size
+        self.create_layout()
 
     def create_layout(self):
         for coord, item in self.grid_items.items():
