@@ -13,22 +13,41 @@ class GridDisplay(tk.Frame):
         self, parent, create_tile, size: tuple[int, int] = (5, 5), *args, **kwargs
     ):
         super().__init__(parent, *args, **kwargs)
-        self.size = size
         self.create_tile = create_tile
-
         self.grid_items = dict()
-        for x in range(size[1]):
-            for y in range(size[0]):
-                self.grid_items[x, y] = Empty(self)
+
+        self.set_grid_size(size)
 
         self.create_layout()
+
+    def clear_grid(self):
+        for tile in self.grid_items.values():
+            tile.destroy()
+        self.grid_items.clear()
+
+    def set_grid_size(self, size):
+        # Prune grid
+        for x, y in self.grid_items:
+            if x >= size[1] or y >= size[0]:
+                self.grid_items[x, y].destroy()
+                del self.grid_items[x, y]
+
+        # Expand grid
+        for x in range(size[1]):
+            for y in range(size[0]):
+                if (x, y) not in self.grid_items:
+                    self.grid_items[x, y] = Empty(self)
+
+        self.size = size
 
     def create_layout(self):
         for coord, item in self.grid_items.items():
             self.add_grid_item(item, coord)
 
     def add_grid_item(self, item, coord):
-        item.grid(row=coord[1], column=coord[0], ipadx=0, sticky=tk.NS)
+        item.grid(
+            row=self.size[0] - coord[1] - 1, column=coord[0], ipadx=0, sticky=tk.NS
+        )
         item.bind("<Button-1>", self.create_handle_click(coord))
 
     def create_handle_click(self, coord):
@@ -54,11 +73,10 @@ class GridDisplay(tk.Frame):
         rails: list[tuple[Directions, Coord]],
     ) -> None:
         """Imports the grid from a data dictionary"""
-        for tile in self.grid_items.values():
-            tile.destroy()
-        self.grid_items.clear()
+        self.clear_grid()
+        self.set_grid_size((rows, cols))
 
-        # TODO: handle grid size and color params
+        # TODO: handle color params
         for coord in entrances:
             self.grid_items[coord] = Entrance(self)
         for coord in exits:
