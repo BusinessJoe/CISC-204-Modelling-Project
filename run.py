@@ -6,7 +6,7 @@ from src.lib204 import Encoding
 if __name__ == "__main__":
     from pprint import pprint
 
-    with open("data/test3.ce") as f:
+    with open("data/test1.ce") as f:
         T, props = read_file(f)
 
     print("\nSatisfiable: %s" % T.is_satisfiable())
