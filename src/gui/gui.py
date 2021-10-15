@@ -23,14 +23,19 @@ class Application(tk.Frame):
         right_panel = tk.Frame(self)
         right_panel.pack(side=tk.RIGHT)
 
-        self.rows_entry = tk.Entry(right_panel)
-        self.cols_entry = tk.Entry(right_panel)
+        size_panel = tk.Frame(right_panel)
+        size_panel.pack()
+
+        tk.Label(size_panel, text='Rows').grid(row=0, column=0)
+        tk.Label(size_panel, text='Cols').grid(row=1, column=0)
+        self.rows_entry = tk.Entry(size_panel)
+        self.cols_entry = tk.Entry(size_panel)
         set_size_button = tk.Button(
-            right_panel, text="Set Size", command=self._handle_set_size
+            size_panel, text="Set Size", command=self._handle_set_size
         )
-        self.rows_entry.pack()
-        self.cols_entry.pack()
-        set_size_button.pack()
+        self.rows_entry.grid(row=0, column=1)
+        self.cols_entry.grid(row=1, column=1)
+        set_size_button.grid(row=2, column=0, columnspan=2)
 
         self.tile_settings = TileSettings(
             right_panel,
