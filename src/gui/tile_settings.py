@@ -21,15 +21,17 @@ class TileSettings(tk.Frame):
 
         self.tile_type_string.set("alien")
 
+        option_frame = tk.Frame(self)
         for option in self.tile_options:
             r = tk.Radiobutton(
-                self,
+                option_frame,
                 text=option.title(),
                 variable=self.tile_type_string,
                 value=option,
                 command=self.handle_click,
             )
-            r.pack(anchor=tk.N)
+            r.pack(anchor=tk.W)
+        option_frame.pack(pady=(30, 10))
 
         self.page = Page(
             self,

@@ -18,13 +18,13 @@ class Application(tk.Frame):
         self.grid_display = GridDisplay(
             self, create_tile=self._create_tile, size=(5, 5)
         )
-        self.grid_display.pack(side=tk.LEFT)
+        self.grid_display.pack(side=tk.LEFT, padx=20, pady=20)
 
         right_panel = tk.Frame(self)
         right_panel.pack(side=tk.RIGHT)
 
         size_panel = tk.Frame(right_panel)
-        size_panel.pack()
+        size_panel.pack(padx=(0, 20), pady=20)
 
         tk.Label(size_panel, text='Rows').grid(row=0, column=0)
         tk.Label(size_panel, text='Cols').grid(row=1, column=0)
@@ -42,10 +42,12 @@ class Application(tk.Frame):
         )
         self.tile_settings.pack()
 
-        import_ = tk.Button(right_panel, text="Import", command=self._handle_import)
-        import_.pack()
-        export = tk.Button(right_panel, text="Export", command=self._handle_export)
-        export.pack()
+        file_frame = tk.Frame(right_panel)
+        import_ = tk.Button(file_frame, text="Import", command=self._handle_import)
+        import_.grid(row=0, column=0)
+        export = tk.Button(file_frame, text="Export", command=self._handle_export)
+        export.grid(row=0, column=1)
+        file_frame.pack(pady=(30, 10))
 
     def _handle_set_size(self):
         size = int(self.rows_entry.get()), int(self.cols_entry.get())
