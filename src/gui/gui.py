@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter.messagebox import showerror
 import tkinter.filedialog as filedialog
 from src import xml_parser
 
@@ -54,25 +55,31 @@ class Application(tk.Frame):
         self.grid_display.set_grid_size(size)
 
     def _handle_import(self):
-        f = filedialog.askopenfile(
-            mode="r", filetypes=[("XML FIles", ".xml")], defaultextension=".xml"
-        )
-        if f is None:
-            return
-        xml = f.read()
-        data = xml_parser.import_xml(xml)
-        self.grid_display.import_(**data)
-        f.close()
+        try:
+            f = filedialog.askopenfile(
+                mode="r", filetypes=[("XML FIles", ".xml")], defaultextension=".xml"
+            )
+            if f is None:
+                return
+            xml = f.read()
+            data = xml_parser.import_xml(xml)
+            self.grid_display.import_(**data)
+            f.close()
+        except Exception as e:
+            showerror("Error", str(e))
 
     def _handle_export(self):
-        f = filedialog.asksaveasfile(
-            mode="w", filetypes=[("XML FIles", ".xml")], defaultextension=".xml"
-        )
-        if f is None:
-            return
-        xml = self.grid_display.export()
-        f.write(xml)
-        f.close()
+        try:
+            f = filedialog.asksaveasfile(
+                mode="w", filetypes=[("XML FIles", ".xml")], defaultextension=".xml"
+            )
+            if f is None:
+                return
+            xml = self.grid_display.export()
+            f.write(xml)
+            f.close()
+        except Exception as e:
+            showerror("Error", str(e))
 
     def _create_tile(self, parent):
         return self.tile_settings.get_tile(parent)
