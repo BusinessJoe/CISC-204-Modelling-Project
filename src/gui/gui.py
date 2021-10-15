@@ -67,6 +67,7 @@ class Application(tk.Frame):
             f.close()
         except Exception as e:
             showerror("Error", str(e))
+            raise
 
     def _handle_export(self):
         try:
@@ -80,6 +81,7 @@ class Application(tk.Frame):
             f.close()
         except Exception as e:
             showerror("Error", str(e))
+            raise
 
     def _create_tile(self, parent):
         return self.tile_settings.get_tile(parent)
