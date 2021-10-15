@@ -130,7 +130,7 @@ class GridDisplay(tk.Frame):
             for coord, tile in self.grid_items.items()
             if isinstance(tile, Rail)
         ]
-        colors = max(max(a[0] for a in aliens), max(h[0] for h in houses)) + 1
+        colors = max(max((a[0] for a in aliens), default=0), max((h[0] for h in houses), default=0)) + 1
 
         return export_xml(
             rows=self.size[0],
