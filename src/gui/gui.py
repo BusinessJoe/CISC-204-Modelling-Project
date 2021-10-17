@@ -27,8 +27,8 @@ class Application(tk.Frame):
         size_panel = tk.Frame(right_panel)
         size_panel.pack(padx=(0, 20), pady=20)
 
-        tk.Label(size_panel, text='Rows').grid(row=0, column=0)
-        tk.Label(size_panel, text='Cols').grid(row=1, column=0)
+        tk.Label(size_panel, text="Rows").grid(row=0, column=0)
+        tk.Label(size_panel, text="Cols").grid(row=1, column=0)
         self.rows_entry = tk.Entry(size_panel)
         self.cols_entry = tk.Entry(size_panel)
         set_size_button = tk.Button(
