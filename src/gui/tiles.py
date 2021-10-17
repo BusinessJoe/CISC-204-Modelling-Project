@@ -2,7 +2,18 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 
-COLORS = ["purple", "orange", "red", "green", "blue", "pink", "yellow", "brown", "black", "white"]
+COLORS = [
+    "purple",
+    "orange",
+    "red",
+    "green",
+    "blue",
+    "pink",
+    "yellow",
+    "brown",
+    "black",
+    "white",
+]
 
 
 class Tile(tk.Frame):

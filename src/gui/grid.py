@@ -83,11 +83,11 @@ class GridDisplay(tk.Frame):
             self.grid_items[coord] = Exit(self)
         for color, coord in aliens:
             if color not in range(colors):
-                raise RuntimeError('color out of range')
+                raise RuntimeError("color out of range")
             self.grid_items[coord] = Alien(self, color)
         for color, coord in houses:
             if color not in range(colors):
-                raise RuntimeError('color out of range')
+                raise RuntimeError("color out of range")
             self.grid_items[coord] = House(self, color)
         for coord in obstacles:
             self.grid_items[coord] = Obstacle(self)
@@ -130,7 +130,13 @@ class GridDisplay(tk.Frame):
             for coord, tile in self.grid_items.items()
             if isinstance(tile, Rail)
         ]
-        colors = max(max((a[0] for a in aliens), default=0), max((h[0] for h in houses), default=0)) + 1
+        colors = (
+            max(
+                max((a[0] for a in aliens), default=0),
+                max((h[0] for h in houses), default=0),
+            )
+            + 1
+        )
 
         return export_xml(
             rows=self.size[0],
