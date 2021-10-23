@@ -98,7 +98,7 @@ class CosmicExpressTheory:
             self.theory.add_constraint(
                 logic.implication(
                     logic.multi_or(
-                        *(self.props[f"A_{c}"][x, y] for c in range(self.num_colors))
+                        self.props[f"A_{c}"][x, y] for c in range(self.num_colors)
                     ),
                     self.props["A"][x, y],
                 )
@@ -107,7 +107,7 @@ class CosmicExpressTheory:
             # Each alien must only have one color
             self.theory.add_constraint(
                 logic.one_of_or_none(
-                    *(self.props[f"A_{c}"][x, y] for c in range(self.num_colors))
+                    self.props[f"A_{c}"][x, y] for c in range(self.num_colors)
                 )
             )
 
@@ -117,7 +117,7 @@ class CosmicExpressTheory:
             self.theory.add_constraint(
                 logic.implication(
                     logic.multi_or(
-                        *(self.props[f"H_{c}"][x, y] for c in range(self.num_colors))
+                        self.props[f"H_{c}"][x, y] for c in range(self.num_colors)
                     ),
                     self.props["H"][x, y],
                 )
@@ -126,7 +126,7 @@ class CosmicExpressTheory:
             # Each house must only have one color
             self.theory.add_constraint(
                 logic.one_of_or_none(
-                    *(self.props[f"H_{c}"][x, y] for c in range(self.num_colors))
+                    self.props[f"H_{c}"][x, y] for c in range(self.num_colors)
                 )
             )
 
@@ -155,9 +155,7 @@ class CosmicExpressTheory:
             # Only one of the input directions can be true. The same holds for output directions
             for io in "IO":
                 self.theory.add_constraint(
-                    logic.one_of_or_none(
-                        *(self.props[f"R{io}{d}"][x, y] for d in "NESW")
-                    )
+                    logic.one_of_or_none(self.props[f"R{io}{d}"][x, y] for d in "NESW")
                 )
 
             for direction, opposite, offset in zip(
@@ -186,7 +184,7 @@ class CosmicExpressTheory:
             self.theory.add_constraint(
                 logic.implication(
                     self.props[f"SR"][x, y],
-                    logic.multi_or(*parts),
+                    logic.multi_or(parts),
                 )
             )
 
@@ -199,6 +197,6 @@ class CosmicExpressTheory:
             self.theory.add_constraint(
                 logic.implication(
                     self.props[f"ER"][x, y],
-                    logic.multi_or(*parts),
+                    logic.multi_or(parts),
                 )
             )
