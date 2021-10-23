@@ -1,4 +1,6 @@
 from typing import Any, TextIO
+
+from src.xml_parser import import_xml
 from .lib204 import Encoding
 from .theory import CosmicExpressTheory
 from . import logic
@@ -6,127 +8,61 @@ from . import logic
 
 def read_file(file: TextIO) -> tuple[Encoding, Any]:
     # Reverse the order of rows since row 0 refers to the bottom row
-    rows = list(reversed([line.rstrip("\n") for line in file]))
+    xml = file.read()
 
-    num_rows = len(rows)
-    num_cols = len(rows[0])
+    data = import_xml(xml)
 
-    print(f"{num_cols=}")
-    # Sanity check that every row is the same length
-    for row in rows:
-        print(f"{row=}")
-        if len(row) != num_cols:
-            raise RuntimeError("The provided board is not rectangular")
-
-    obstacles = []
-    starting_rail = None
-    ending_rail = None
-    rails = []
-    empties = []
-    for y, row in enumerate(rows):
-        for x, char in enumerate(row):
-            if char == "#":
-                obstacles.append((x, y))
-
-            elif char == "I":
-                if not starting_rail:
-                    starting_rail = (x, y)
-                else:
-                    raise RuntimeError("Found more than one starting rail")
-
-            elif char == "O":
-                if not ending_rail:
-                    ending_rail = (x, y)
-                else:
-                    raise RuntimeError("Found more than one ending rail")
-
-            else:
-                rail = parse_rail(char)
-                if rail:
-                    rails.append((rail, (x, y)))
-                else:
-                    empties.append((x, y))
-
-    # Check that starting rail and ending rail were defined
-    if not starting_rail:
-        raise RuntimeError("No starting rail found")
-    if not ending_rail:
-        raise RuntimeError("No ending rail found")
+    if len(data["entrances"]) != 1:
+        raise ValueError("there must be exactly one entrance")
+    if len(data["exits"]) != 1:
+        raise ValueError("there must be exactly one exit")
 
     # TODO: replace the number of colors with value calculated from the file
-    theory_wrapper = CosmicExpressTheory((num_rows, num_cols), 2)
+    theory_wrapper = CosmicExpressTheory((data["rows"], data["cols"]), 3)
     theory = theory_wrapper.theory
     props = theory_wrapper.props
 
-    for obs in obstacles:
-        theory.add_constraint(props["O"][obs])
-    theory.add_constraint(props["SR"][starting_rail])
-    theory.add_constraint(props["ER"][ending_rail])
-    for rail in rails:
-        i, o = rail[0]
-        x, y = rail[1]
-        theory.add_constraint(props[f"RI{i}"][x, y])
-        theory.add_constraint(props[f"RO{o}"][x, y])
-    for empty in empties:
-        theory.add_constraint(
-            logic.none_of(
-                props["A"][empty],
-                props["H"][empty],
-                props["O"][empty],
-                props["R"][empty],
-                props["SR"][empty],
-                props["ER"][empty],
-            )
-        )
+    non_empty_coords = []
+
+    for coord in data["entrances"]:
+        theory.add_constraint(props["SR"][coord])
+        non_empty_coords.append(coord)
+    for coord in data["exits"]:
+        theory.add_constraint(props["ER"][coord])
+        non_empty_coords.append(coord)
+    for color, coord in data["aliens"]:
+        theory.add_constraint(props[f"A_{color}"][coord])
+        non_empty_coords.append(coord)
+    for color, coord in data["houses"]:
+        theory.add_constraint(props[f"H_{color}"][coord])
+        non_empty_coords.append(coord)
+    for coord in data["obstacles"]:
+        theory.add_constraint(props["O"][coord])
+        non_empty_coords.append(coord)
+    for directions, coord in data["rails"]:
+        theory.add_constraint(props[f"RI{directions[0]}"][coord])
+        theory.add_constraint(props[f"RO{directions[1]}"][coord])
+        non_empty_coords.append(coord)
+
+    for x in range(data["cols"]):
+        for y in range(data["rows"]):
+            if (x, y) not in non_empty_coords:
+                theory.add_constraint(
+                    logic.none_of(
+                        props["A"][x, y],
+                        props["H"][x, y],
+                        props["O"][x, y],
+                        props["R"][x, y],
+                        props["SR"][x, y],
+                        props["ER"][x, y],
+                    )
+                )
 
     return theory, props
 
 
-def parse_rail(char):
-    rail_mapping = {
-        "⭠": ("E", "W"),
-        "⭢": ("W", "E"),
-        "⭡": ("S", "N"),
-        "⭣": ("N", "S"),
-        "⮠": ("N", "W"),
-        "⮡": ("N", "E"),
-        "⮢": ("S", "W"),
-        "⮣": ("S", "E"),
-        "⮤": ("E", "N"),
-        "⮥": ("W", "N"),
-        "⮦": ("E", "S"),
-        "⮧": ("W", "S"),
-    }
-    return rail_mapping.get(char)
-
-
-def get_special_rail(rail_type, x, y, num_rows, num_cols):
-    if (x, y) in (
-        (0, 0),
-        (0, num_rows - 1),
-        (num_cols - 1, 0),
-        (num_cols - 1, num_rows - 1),
-    ):
-        raise RuntimeError("Special rail cannot be in a corner")
-
-    if x == 0:
-        directions = "EW"
-    elif x == num_cols - 1:
-        directions = "WE"
-    elif y == 0:
-        directions = "NS"
-    elif y == num_rows - 1:
-        directions = "SN"
-    else:
-        raise RuntimeError("Special rail must be on an edge")
-
-    direction = directions[0] if rail_type == "I" else directions[1]
-
-    return direction, (x, y)
-
-
 if __name__ == "__main__":
-    with open("data/test1.ce") as f:
+    with open("data/xml/test.xml") as f:
         T, _ = read_file(f)
 
     T.solve()
