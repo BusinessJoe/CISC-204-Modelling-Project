@@ -1,0 +1,12 @@
+<board rows="3" cols="7" colors="2">
+    <entrance x="0" y="0" />
+    <exit x="0" y="1" />
+    <aliens>
+    </aliens>
+    <houses>
+    </houses>
+    <obstacles>
+    </obstacles>
+    <rails>
+    </rails>
+</board>
