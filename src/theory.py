@@ -22,7 +22,34 @@ class CosmicExpressTheory:
         return self.num_rows, self.num_cols
 
     def build_propositions(self) -> None:
-        """Builds the propositions required by the theory"""
+        """Builds the propositions required by the theory
+
+        Each tile on the grid has many propositions that apply to it:
+            - whether the tile is an alien
+            - whether the tile is a rail
+            - whether the tile's rail outputs to the North
+        and so on. These propositions are created and stored in the self.props dictionary.
+
+        The key of self.props represents the type of proposition:
+            - A:        the tile is an alien
+            - A_[c]:    the alien is of color [c]
+            - H:        the tile is a house
+            - H_[c]:    the house is of color [c]
+            - O:        the tile is an obstacle
+            - R:        the tile is a rail
+            - RI[d]:    the rail has input from direction [d]
+            - RO[d]:    the rail has input from direction [d]
+            - SR:       the tile is an entrance
+            - ER:       the tile is an exit
+            - V:        the rail is visited during the train's route
+            - SA:       the alien is satisfied (picked up) during the train's route
+            - SH:       the house is satisfied (an alien is dropped off) during the train's route
+            - TA_[c]    honestly no clue
+
+        The value of each key is a dictionary mapping from grid coordinates (x, y) to a propositional variable.
+
+        To get the variable representing an obstacle at position (2, 3) you would use self.props["O"][2, 3].
+        """
         self.props = dict()
 
         grid_prop_prefixes = [
@@ -46,9 +73,10 @@ class CosmicExpressTheory:
             self.props[prefix] = helpers.build_2d_proposition_dict(self.size, prefix)
 
     def add_constraints(self) -> None:
+        """Adds all of the required contraints to the theory"""
         self.add_alien_constraints()
         self.add_house_constraints()
-        self.add_rail_constraints()
+        self.add_rail_connection_constraints()
 
         for x, y in helpers.all_coords(self.size):
 
@@ -95,7 +123,15 @@ class CosmicExpressTheory:
                 )
             )
 
-    def add_rail_constraints(self) -> None:
+            # Each house must only have one color
+            self.theory.add_constraint(
+                logic.one_of_or_none(
+                    *(self.props[f"H_{c}"][x, y] for c in range(self.num_colors))
+                )
+            )
+
+    def add_rail_connection_constraints(self) -> None:
+        """Ensures that the rails form a single, connected path from the entrance to exit"""
         for x, y in helpers.all_coords(self.size):
             # If an input or output rail direction is present then a rail is present
             self.theory.add_constraint(

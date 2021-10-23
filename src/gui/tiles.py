@@ -2,6 +2,20 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 
+COLORS = [
+    "purple",
+    "orange",
+    "red",
+    "green",
+    "blue",
+    "pink",
+    "yellow",
+    "brown",
+    "black",
+    "white",
+]
+
+
 class Tile(tk.Frame):
     width = 128
     height = 128
@@ -36,7 +50,7 @@ class Empty(Tile):
 class Alien(Tile):
     def __init__(self, parent, color: int, *args, **kwargs):
         self.color = color
-        self.color_string = ["purple", "orange", "red"][color]
+        self.color_string = COLORS[color]
         super().__init__(parent, *args, **kwargs)
 
     def add_image(self) -> None:
@@ -48,7 +62,7 @@ class Alien(Tile):
 class House(Tile):
     def __init__(self, parent, color: int, *args, **kwargs):
         self.color = color
-        self.color_string = ["purple", "orange", "red"][color]
+        self.color_string = COLORS[color]
         super().__init__(parent, *args, **kwargs)
 
     def add_image(self) -> None:

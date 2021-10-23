@@ -21,15 +21,17 @@ class TileSettings(tk.Frame):
 
         self.tile_type_string.set("alien")
 
+        option_frame = tk.Frame(self)
         for option in self.tile_options:
             r = tk.Radiobutton(
-                self,
+                option_frame,
                 text=option.title(),
                 variable=self.tile_type_string,
                 value=option,
                 command=self.handle_click,
             )
-            r.pack(anchor=tk.N)
+            r.pack(anchor=tk.W)
+        option_frame.pack(pady=(30, 10))
 
         self.page = Page(
             self,
@@ -68,8 +70,9 @@ class AlienSettings(TileSpecificSettings):
         self.color = tk.StringVar()
         self.color.set("0")
 
+        tk.Label(self, text="Color").grid(row=0, column=0)
         self.entry = tk.Entry(self, textvariable=self.color)
-        self.entry.pack()
+        self.entry.grid(row=0, column=1)
 
     def get_args_and_kwargs(self):
         return tuple(), {"color": int(self.color.get())}
@@ -85,11 +88,13 @@ class RailSettings(TileSpecificSettings):
         self.out_direction = tk.StringVar()
         self.out_direction.set("S")
 
+        tk.Label(self, text="In direction").grid(row=0, column=0)
+        tk.Label(self, text="Out direction").grid(row=1, column=0)
         self.in_entry = tk.Entry(self, textvariable=self.in_direction)
         self.out_entry = tk.Entry(self, textvariable=self.out_direction)
 
-        self.in_entry.pack()
-        self.out_entry.pack()
+        self.in_entry.grid(row=0, column=1)
+        self.out_entry.grid(row=1, column=1)
 
     def get_args_and_kwargs(self):
         return tuple(), {
