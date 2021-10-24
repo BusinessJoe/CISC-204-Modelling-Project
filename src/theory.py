@@ -175,3 +175,30 @@ class CosmicExpressTheory:
                             ),
                         )
                     )
+
+            # Entrances and exits need a rail beside them
+            parts = []
+            for opposite, offset in zip("SWNE", ((0, 1), (1, 0), (0, -1), (-1, 0))):
+                offset_coords = (x + offset[0], y + offset[1])
+                if offset_coords in self.props[f"RI{opposite}"]:
+                    parts.append(self.props[f"RI{opposite}"][offset_coords])
+
+            self.theory.add_constraint(
+                logic.implication(
+                    self.props[f"SR"][x, y],
+                    logic.multi_or(*parts),
+                )
+            )
+
+            parts = []
+            for opposite, offset in zip("SWNE", ((0, 1), (1, 0), (0, -1), (-1, 0))):
+                offset_coords = (x + offset[0], y + offset[1])
+                if offset_coords in self.props[f"RO{opposite}"]:
+                    parts.append(self.props[f"RO{opposite}"][offset_coords])
+
+            self.theory.add_constraint(
+                logic.implication(
+                    self.props[f"ER"][x, y],
+                    logic.multi_or(*parts),
+                )
+            )
