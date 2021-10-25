@@ -54,19 +54,19 @@ class CosmicExpressTheory:
 
         grid_prop_prefixes = [
             "A",
-            *[f"A_{c}" for c in range(self.num_colors)],
             "H",
-            *[f"H_{c}" for c in range(self.num_colors)],
             "O",
             "R",
-            *[f"RI{d}" for d in "NESW"],
-            *[f"RO{d}" for d in "NESW"],
             "SR",
             "ER",
             "V",
             "SA",
             "SH",
-            *[f"TA_{c}" for c in range(self.num_colors)],
+            *(f"A_{c}" for c in range(self.num_colors)),
+            *(f"H_{c}" for c in range(self.num_colors)),
+            *(f"TA_{c}" for c in range(self.num_colors)),
+            *(f"RI{d}" for d in "NESW"),
+            *(f"RO{d}" for d in "NESW"),
         ]
 
         for prefix in grid_prop_prefixes:
