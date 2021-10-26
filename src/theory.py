@@ -44,7 +44,7 @@ class CosmicExpressTheory:
             - V:        the rail is visited during the train's route
             - SA:       the alien is satisfied (picked up) during the train's route
             - SH:       the house is satisfied (an alien is dropped off) during the train's route
-            - TA_[c]    honestly no clue
+            - TA_[c]    train alien color
 
         The value of each key is a dictionary mapping from grid coordinates (x, y) to a propositional variable.
 
