@@ -21,6 +21,9 @@ class CosmicExpressTheory:
     def size(self) -> tuple[int, int]:
         return self.num_rows, self.num_cols
 
+    def grid_contains(self, coord) -> bool:
+        return 0 <= coord[0] < self.num_rows and 0 <= coord[1] < self.num_cols
+
     def build_propositions(self) -> None:
         """Builds the propositions required by the theory
 
@@ -151,6 +154,11 @@ class CosmicExpressTheory:
                         self.props[f"RI{d}"][x, y], self.props[f"RO{d}"][x, y].negate()
                     )
                 )
+                self.theory.add_constraint(
+                    logic.implication(
+                        self.props[f"RO{d}"][x, y], self.props[f"RI{d}"][x, y].negate()
+                    )
+                )
 
             # Only one of the input directions can be true. The same holds for output directions
             for io in "IO":
@@ -158,45 +166,53 @@ class CosmicExpressTheory:
                     logic.one_of_or_none(self.props[f"R{io}{d}"][x, y] for d in "NESW")
                 )
 
-            for direction, opposite, offset in zip(
-                "NESW", "SWNE", ((0, 1), (1, 0), (0, -1), (-1, 0))
+            # Each rail connects to two of: another rail, entrance, or exit
+            for direction, opposite_direction, offset_coord in helpers.get_directions(
+                (x, y)
             ):
-                offset_coords = (x + offset[0], y + offset[1])
-                if offset_coords in self.props[f"RI{opposite}"]:
+                if self.grid_contains(offset_coord):
                     self.theory.add_constraint(
                         logic.implication(
                             self.props[f"RO{direction}"][x, y],
                             logic.one_of(
-                                self.props[f"RI{opposite}"][offset_coords],
-                                self.props["SR"][offset_coords],
-                                self.props["ER"][offset_coords],
+                                self.props[f"RI{opposite_direction}"][offset_coord],
+                                self.props["ER"][offset_coord],
                             ),
                         )
                     )
 
-            # Entrances and exits need a rail beside them
+                    self.theory.add_constraint(
+                        logic.implication(
+                            self.props[f"RI{direction}"][x, y],
+                            logic.one_of(
+                                self.props[f"RO{opposite_direction}"][offset_coord],
+                                self.props["SR"][offset_coord],
+                            ),
+                        )
+                    )
+
+            # Entrances need a single rail taking input from them
             parts = []
-            for opposite, offset in zip("SWNE", ((0, 1), (1, 0), (0, -1), (-1, 0))):
-                offset_coords = (x + offset[0], y + offset[1])
-                if offset_coords in self.props[f"RI{opposite}"]:
-                    parts.append(self.props[f"RI{opposite}"][offset_coords])
+            for _, opposite_direction, offset_coord in helpers.get_directions((x, y)):
+                if self.grid_contains(offset_coord):
+                    parts.append(self.props[f"RI{opposite_direction}"][offset_coord])
 
             self.theory.add_constraint(
                 logic.implication(
                     self.props[f"SR"][x, y],
-                    logic.multi_or(parts),
+                    logic.one_of(parts),
                 )
             )
 
+            # Exits need a single rail outputting to them
             parts = []
-            for opposite, offset in zip("SWNE", ((0, 1), (1, 0), (0, -1), (-1, 0))):
-                offset_coords = (x + offset[0], y + offset[1])
-                if offset_coords in self.props[f"RO{opposite}"]:
-                    parts.append(self.props[f"RO{opposite}"][offset_coords])
+            for _, opposite_direction, offset_coord in helpers.get_directions((x, y)):
+                if self.grid_contains(offset_coord):
+                    parts.append(self.props[f"RO{opposite_direction}"][offset_coord])
 
             self.theory.add_constraint(
                 logic.implication(
                     self.props[f"ER"][x, y],
-                    logic.multi_or(parts),
+                    logic.one_of(parts),
                 )
             )
