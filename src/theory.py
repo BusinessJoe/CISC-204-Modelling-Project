@@ -42,8 +42,8 @@ class CosmicExpressTheory:
             - R:        the tile is a rail
             - RI[d]:    the rail has input from direction [d]
             - RO[d]:    the rail has input from direction [d]
-            - SR:       the tile is an entrance
-            - ER:       the tile is an exit
+            - EN:       the tile is an entrance
+            - EX:       the tile is an exit
             - V:        the rail is visited during the train's route
             - SA:       the alien is satisfied (picked up) during the train's route
             - SH:       the house is satisfied (an alien is dropped off) during the train's route
@@ -60,8 +60,8 @@ class CosmicExpressTheory:
             "H",
             "O",
             "R",
-            "SR",
-            "ER",
+            "EN",
+            "EX",
             "V",
             "SA",
             "SH",
@@ -90,8 +90,8 @@ class CosmicExpressTheory:
                     self.props["H"][x, y],
                     self.props["O"][x, y],
                     self.props["R"][x, y],
-                    self.props["SR"][x, y],
-                    self.props["ER"][x, y],
+                    self.props["EN"][x, y],
+                    self.props["EX"][x, y],
                 )
             )
 
@@ -176,7 +176,7 @@ class CosmicExpressTheory:
                             self.props[f"RO{direction}"][x, y],
                             logic.one_of(
                                 self.props[f"RI{opposite_direction}"][offset_coord],
-                                self.props["ER"][offset_coord],
+                                self.props["EX"][offset_coord],
                             ),
                         )
                     )
@@ -186,7 +186,7 @@ class CosmicExpressTheory:
                             self.props[f"RI{direction}"][x, y],
                             logic.one_of(
                                 self.props[f"RO{opposite_direction}"][offset_coord],
-                                self.props["SR"][offset_coord],
+                                self.props["EN"][offset_coord],
                             ),
                         )
                     )
@@ -199,7 +199,7 @@ class CosmicExpressTheory:
 
             self.theory.add_constraint(
                 logic.implication(
-                    self.props[f"SR"][x, y],
+                    self.props[f"EN"][x, y],
                     logic.one_of(parts),
                 )
             )
@@ -212,7 +212,7 @@ class CosmicExpressTheory:
 
             self.theory.add_constraint(
                 logic.implication(
-                    self.props[f"ER"][x, y],
+                    self.props[f"EX"][x, y],
                     logic.one_of(parts),
                 )
             )
