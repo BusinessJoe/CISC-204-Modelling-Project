@@ -48,16 +48,16 @@ def one_of(*args: Var) -> Var:
     parts = []
     for idx in range(len(args)):
         parts.append(
-            multi_and(*(a if i == idx else a.negate() for i, a in enumerate(args)))
+            multi_and(a if i == idx else a.negate() for i, a in enumerate(args))
         )
-    return multi_or(*parts)
+    return multi_or(parts)
 
 
 @_expand_iterable
 def none_of(*args: Var) -> Var:
-    return multi_and(*(a.negate() for a in args))
+    return multi_and(a.negate() for a in args)
 
 
 @_expand_iterable
 def one_of_or_none(*args: Var) -> Var:
-    return one_of(*args) | multi_and(*(a.negate() for a in args))
+    return one_of(args) | multi_and(a.negate() for a in args)

@@ -19,6 +19,14 @@ def all_coords(size: tuple[int, int]):
     return product(range(size[1]), range(size[0]))
 
 
+def get_directions(coord: Coord):
+    for direction, opposite_direction, offset in zip(
+        "NESW", "SWNE", ((0, 1), (1, 0), (0, -1), (-1, 0))
+    ):
+        offset_coord = coord[0] + offset[0], coord[1] + offset[1]
+        yield direction, opposite_direction, offset_coord
+
+
 if __name__ == "__main__":
     coords = all_coords((3, 5))
     print(type(coords))
