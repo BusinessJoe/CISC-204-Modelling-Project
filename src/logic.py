@@ -29,6 +29,7 @@ def _expand_iterable(func):
 
 
 def implication(left: Var, right: Var) -> Var:
+    """Returns a Var equal to (left implies right)"""
     return left.negate() | right
 
 
