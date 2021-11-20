@@ -25,10 +25,10 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
     non_empty_coords = []
 
     for coord in data["entrances"]:
-        theory.add_constraint(props["SR"][coord])
+        theory.add_constraint(props["EN"][coord])
         non_empty_coords.append(coord)
     for coord in data["exits"]:
-        theory.add_constraint(props["ER"][coord])
+        theory.add_constraint(props["EX"][coord])
         non_empty_coords.append(coord)
     for color, coord in data["aliens"]:
         theory.add_constraint(props[f"A_{color}"][coord])
@@ -53,8 +53,8 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
                         props["H"][x, y],
                         props["O"][x, y],
                         props["R"][x, y],
-                        props["SR"][x, y],
-                        props["ER"][x, y],
+                        props["EN"][x, y],
+                        props["EX"][x, y],
                     )
                 )
 
