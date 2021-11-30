@@ -40,8 +40,8 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
         theory.add_constraint(props["O"][coord])
         non_empty_coords.append(coord)
     for directions, coord in data["rails"]:
-        theory.add_constraint(props[f"RI{directions[0]}"][coord])
-        theory.add_constraint(props[f"RO{directions[1]}"][coord])
+        theory.add_constraint(props[f"RI_{directions[0]}"][coord])
+        theory.add_constraint(props[f"RO_{directions[1]}"][coord])
         non_empty_coords.append(coord)
 
     for x in range(data["cols"]):

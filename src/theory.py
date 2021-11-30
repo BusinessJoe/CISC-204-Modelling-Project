@@ -51,7 +51,8 @@ class CosmicExpressTheory:
             - V:        the rail is visited during the train's route
             - SA:       the alien is satisfied (picked up) during the train's route
             - SH:       the house is satisfied (an alien is dropped off) during the train's route
-            - TA_[c]    train alien color
+            - BTA_[c]   train alien color before a timestep (think about it like the input state)
+            - ATA_[c]   train alien color after a timestep (think about it like the output state)
 
         The value of each key is a dictionary mapping from grid coordinates (x, y) to a propositional variable.
 
@@ -59,25 +60,49 @@ class CosmicExpressTheory:
         """
         self.props = dict()
 
-        grid_prop_prefixes = [
-            "A",
-            "H",
-            "O",
-            "R",
-            "EN",
-            "EX",
-            "V",
-            "SA",
-            "SH",
-            *(f"A_{c}" for c in range(self.num_colors)),
-            *(f"H_{c}" for c in range(self.num_colors)),
-            *(f"TA_{c}" for c in range(self.num_colors)),
-            *(f"RI{d}" for d in "NESW"),
-            *(f"RO{d}" for d in "NESW"),
+        # Props are represented by a tuple (prefix, name, prop_type)
+        # - prefix is the shorthand symbol used as a key for the prop in the props dict
+        # - name is the full name of the prop (currently unused)
+        # - prop_type is one of (None, "color", "direction") and determines if the prop
+        #   gets an extra descriptor
+        grid_props = [
+            ("A", "alien", None),
+            ("H", "house", None),
+            ("O", "obstacle", None),
+            ("R", "rail", None),
+            ("EN", "entrance", None),
+            ("EX", "exit", None),
+            ("V", "visited", None),
+            ("SA", "alien_satisfied", None),
+            ("SH", "house_satisfied", None),
+            ("A", "alien_color", "color"),
+            ("H", "house_color", "color"),
+            ("RI", "rail_input", "direction"),
+            ("RO", "rail_output", "direction"),
+            ("TA", "train_alien", None),
+            ("TAB", "train_alien_before", "color"),
+            ("TAA", "train_alien_after", "color"),
         ]
 
-        for prefix in grid_prop_prefixes:
-            self.props[prefix] = helpers.build_2d_proposition_dict(self.size, prefix)
+        for prefix, name, prop_type in grid_props:
+            if prop_type is None:
+                self.props[prefix] = helpers.build_2d_proposition_dict(
+                    self.size, prefix
+                )
+            elif prop_type == "color":
+                for c in range(self.num_colors):
+                    color_prefix = f"{prefix}_{c}"
+                    self.props[color_prefix] = helpers.build_2d_proposition_dict(
+                        self.size, color_prefix
+                    )
+            elif prop_type == "direction":
+                for d in "NESW":
+                    dir_prefix = f"{prefix}_{d}"
+                    self.props[dir_prefix] = helpers.build_2d_proposition_dict(
+                        self.size, dir_prefix
+                    )
+            else:
+                raise RuntimeError(f"unknown prop type '{prop_type}'")
 
     def add_constraints(self) -> None:
         """Adds all of the required contraints to the theory"""
@@ -145,8 +170,8 @@ class CosmicExpressTheory:
             self.theory.add_constraint(
                 logic.implication(
                     logic.multi_or(
-                        *(self.props[f"RI{d}"][x, y] for d in "NESW"),
-                        *(self.props[f"RO{d}"][x, y] for d in "NESW"),
+                        *(self.props[f"RI_{d}"][x, y] for d in "NESW"),
+                        *(self.props[f"RO_{d}"][x, y] for d in "NESW"),
                     ),
                     self.props["R"][x, y],
                 )
@@ -156,19 +181,21 @@ class CosmicExpressTheory:
             for d in "NESW":
                 self.theory.add_constraint(
                     logic.implication(
-                        self.props[f"RI{d}"][x, y], self.props[f"RO{d}"][x, y].negate()
+                        self.props[f"RI_{d}"][x, y],
+                        self.props[f"RO_{d}"][x, y].negate(),
                     )
                 )
                 self.theory.add_constraint(
                     logic.implication(
-                        self.props[f"RO{d}"][x, y], self.props[f"RI{d}"][x, y].negate()
+                        self.props[f"RO_{d}"][x, y],
+                        self.props[f"RI_{d}"][x, y].negate(),
                     )
                 )
 
             # Only one of the input directions can be true. The same holds for output directions
             for io in "IO":
                 self.theory.add_constraint(
-                    logic.one_of_or_none(self.props[f"R{io}{d}"][x, y] for d in "NESW")
+                    logic.one_of_or_none(self.props[f"R{io}_{d}"][x, y] for d in "NESW")
                 )
 
             # Each rail connects to two of: another rail, entrance, or exit
@@ -178,9 +205,9 @@ class CosmicExpressTheory:
                 if self.grid_contains(offset_coord):
                     self.theory.add_constraint(
                         logic.implication(
-                            self.props[f"RO{direction}"][x, y],
+                            self.props[f"RO_{direction}"][x, y],
                             logic.one_of(
-                                self.props[f"RI{opposite_direction}"][offset_coord],
+                                self.props[f"RI_{opposite_direction}"][offset_coord],
                                 self.props["EX"][offset_coord],
                             ),
                         )
@@ -188,9 +215,9 @@ class CosmicExpressTheory:
 
                     self.theory.add_constraint(
                         logic.implication(
-                            self.props[f"RI{direction}"][x, y],
+                            self.props[f"RI_{direction}"][x, y],
                             logic.one_of(
-                                self.props[f"RO{opposite_direction}"][offset_coord],
+                                self.props[f"RO_{opposite_direction}"][offset_coord],
                                 self.props["EN"][offset_coord],
                             ),
                         )
@@ -200,7 +227,7 @@ class CosmicExpressTheory:
             parts = []
             for _, opposite_direction, offset_coord in helpers.get_directions((x, y)):
                 if self.grid_contains(offset_coord):
-                    parts.append(self.props[f"RI{opposite_direction}"][offset_coord])
+                    parts.append(self.props[f"RI_{opposite_direction}"][offset_coord])
 
             self.theory.add_constraint(
                 logic.implication(
@@ -213,7 +240,7 @@ class CosmicExpressTheory:
             parts = []
             for _, opposite_direction, offset_coord in helpers.get_directions((x, y)):
                 if self.grid_contains(offset_coord):
-                    parts.append(self.props[f"RO{opposite_direction}"][offset_coord])
+                    parts.append(self.props[f"RO_{opposite_direction}"][offset_coord])
 
             self.theory.add_constraint(
                 logic.implication(
@@ -223,13 +250,13 @@ class CosmicExpressTheory:
             )
 
     def add_rail_state_constraints(self):
+        return
         for x, y in helpers.all_coords(self.size):
             for _, opposite_direction, offset_coord in helpers.get_directions((x, y)):
                 if self.grid_contains(offset_coord):
                     self.theory.add_constraint(
                         logic.implication(
-                            self.props["EN"][offset_coord],
-                            self.props["BTA"]
+                            self.props["EN"][offset_coord], self.props["BTA"]
                         )
                     )
 
@@ -245,8 +272,8 @@ class CosmicExpressTheory:
             parts = []
             for direction, opposite_direction in zip("NESW", "SWNE"):
                 parts.append(
-                    self.props[f"RI{direction}"][p2]
-                    & self.props[f"RO{opposite_direction}"][p1]
+                    self.props[f"RI_{direction}"][p2]
+                    & self.props[f"RO_{opposite_direction}"][p1]
                 )
             return logic.multi_or(parts)
 
@@ -256,5 +283,8 @@ class CosmicExpressTheory:
                 parts.append(
                     self.rail_comes_before(p1, p3) & self.rail_comes_before(p3, p2)
                 )
-
-        return logic.multi_or(parts)
+        a = logic.multi_or(parts)
+        print(len(str(a)))
+        b = a.simplify()
+        print(len(str(b)))
+        return b
