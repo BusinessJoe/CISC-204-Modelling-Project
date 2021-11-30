@@ -27,6 +27,21 @@ def get_directions(coord: Coord):
         yield direction, opposite_direction, offset_coord
 
 
+def simple_cache(f):
+    cache = dict()
+
+    def wrapper(self, *args):
+        if args in cache:
+            return cache[args]
+
+        print("new args:", args)
+        cache[args] = false
+        cache[args] = f(self, *args)
+        return cache[args]
+
+    return wrapper
+
+
 if __name__ == "__main__":
     coords = all_coords((3, 5))
     print(type(coords))

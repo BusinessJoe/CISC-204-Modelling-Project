@@ -1,8 +1,11 @@
-from nnf import Var
+import functools
+from nnf import Var, false
 from .lib204 import Encoding
 
 from . import helpers
 from . import logic
+
+ARGS = []
 
 
 class CosmicExpressTheory:
@@ -22,7 +25,8 @@ class CosmicExpressTheory:
         return self.num_rows, self.num_cols
 
     def grid_contains(self, coord) -> bool:
-        return 0 <= coord[0] < self.num_rows and 0 <= coord[1] < self.num_cols
+        # coord is an (x, y) tuple, so coord[0] corrisponds to columns and coord[1] to rows.
+        return 0 <= coord[0] < self.num_cols and 0 <= coord[1] < self.num_rows
 
     def build_propositions(self) -> None:
         """Builds the propositions required by the theory
@@ -80,6 +84,7 @@ class CosmicExpressTheory:
         self.add_alien_constraints()
         self.add_house_constraints()
         self.add_rail_connection_constraints()
+        self.add_rail_state_constraints()
 
         for x, y in helpers.all_coords(self.size):
 
@@ -212,7 +217,44 @@ class CosmicExpressTheory:
 
             self.theory.add_constraint(
                 logic.implication(
-                    self.props[f"EX"][x, y],
+                    self.props["EX"][x, y],
                     logic.one_of(parts),
                 )
             )
+
+    def add_rail_state_constraints(self):
+        for x, y in helpers.all_coords(self.size):
+            for _, opposite_direction, offset_coord in helpers.get_directions((x, y)):
+                if self.grid_contains(offset_coord):
+                    self.theory.add_constraint(
+                        logic.implication(
+                            self.props["EN"][offset_coord],
+                            self.props["BTA"]
+                        )
+                    )
+
+    @helpers.simple_cache
+    def rail_comes_before(self, p1, p2):
+        if p1 == p2:
+            return false
+        if not (self.grid_contains(p1) and self.grid_contains(p2)):
+            return false
+
+        # adjacency check using taxicab distance
+        if abs(p1[0] - p2[0]) + abs(p1[1] - p2[1]) == 1:
+            parts = []
+            for direction, opposite_direction in zip("NESW", "SWNE"):
+                parts.append(
+                    self.props[f"RI{direction}"][p2]
+                    & self.props[f"RO{opposite_direction}"][p1]
+                )
+            return logic.multi_or(parts)
+
+        parts = []
+        for _, _, p3 in helpers.get_directions(p2):
+            if self.grid_contains(p3):
+                parts.append(
+                    self.rail_comes_before(p1, p3) & self.rail_comes_before(p3, p2)
+                )
+
+        return logic.multi_or(parts)
