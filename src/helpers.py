@@ -1,5 +1,5 @@
 from itertools import product
-from nnf import Var
+from nnf import Var, false
 
 Coord = tuple[int, int]
 
@@ -9,7 +9,7 @@ def build_2d_proposition_dict(size: tuple[int, int], prefix: str) -> dict[Coord,
     rows, cols = size
     for x in range(cols):
         for y in range(rows):
-            suffix = f",({x},{y})"
+            suffix = f":({x},{y})"
             props[x, y] = Var(prefix + suffix)
     return props
 

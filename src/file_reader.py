@@ -20,28 +20,39 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
     # TODO: replace the number of colors with value calculated from the file
     theory_wrapper = CosmicExpressTheory((data["rows"], data["cols"]), 3)
     theory = theory_wrapper.theory
-    props = theory_wrapper.props
 
     non_empty_coords = []
 
     for coord in data["entrances"]:
-        theory.add_constraint(props["EN"][coord])
+        theory.add_constraint(theory_wrapper.get_prop(name="entrance", coord=coord))
         non_empty_coords.append(coord)
     for coord in data["exits"]:
-        theory.add_constraint(props["EX"][coord])
+        theory.add_constraint(theory_wrapper.get_prop(name="exit", coord=coord))
         non_empty_coords.append(coord)
     for color, coord in data["aliens"]:
-        theory.add_constraint(props[f"A_{color}"][coord])
+        theory.add_constraint(
+            theory_wrapper.get_prop(name="alien_color", descriptor=color, coord=coord)
+        )
         non_empty_coords.append(coord)
     for color, coord in data["houses"]:
-        theory.add_constraint(props[f"H_{color}"][coord])
+        theory.add_constraint(
+            theory_wrapper.get_prop(name="house_color", descriptor=color, coord=coord)
+        )
         non_empty_coords.append(coord)
     for coord in data["obstacles"]:
-        theory.add_constraint(props["O"][coord])
+        theory.add_constraint(theory_wrapper.get_prop(name="obstacle", coord=coord))
         non_empty_coords.append(coord)
     for directions, coord in data["rails"]:
-        theory.add_constraint(props[f"RI_{directions[0]}"][coord])
-        theory.add_constraint(props[f"RO_{directions[1]}"][coord])
+        theory.add_constraint(
+            theory_wrapper.get_prop(
+                name="rail_input", descriptor=directions[0], coord=coord
+            )
+        )
+        theory.add_constraint(
+            theory_wrapper.get_prop(
+                name="rail_output", descriptor=directions[1], coord=coord
+            )
+        )
         non_empty_coords.append(coord)
 
     for x in range(data["cols"]):
@@ -49,16 +60,16 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
             if (x, y) not in non_empty_coords:
                 theory.add_constraint(
                     logic.none_of(
-                        props["A"][x, y],
-                        props["H"][x, y],
-                        props["O"][x, y],
-                        props["R"][x, y],
-                        props["EN"][x, y],
-                        props["EX"][x, y],
+                        theory_wrapper.get_prop(name="alien", coord=coord),
+                        theory_wrapper.get_prop(name="house", coord=coord),
+                        theory_wrapper.get_prop(name="obstacle", coord=coord),
+                        theory_wrapper.get_prop(name="rail", coord=coord),
+                        theory_wrapper.get_prop(name="entrance", coord=coord),
+                        theory_wrapper.get_prop(name="exit", coord=coord),
                     )
                 )
 
-    return theory, props
+    return theory
 
 
 if __name__ == "__main__":
