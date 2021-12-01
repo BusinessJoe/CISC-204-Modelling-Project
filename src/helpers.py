@@ -34,6 +34,27 @@ def get_adjacent(coord: Coord) -> Generator[Coord, None, None]:
         yield offset_coord
 
 
+def direction_between(p1: Coord, p2: Coord):
+    """Returns a string representing the direction of a path from p1 to p2"""
+    if p1 == p2:
+        raise RuntimeError("coords are equal")
+    if p1[0] != p2[0] and p1[1] != p2[1]:
+        raise RuntimeError("coords are not aligned along an axis")
+
+    if p1[0] < p2[0]:
+        return "E"
+    elif p1[0] > p2[0]:
+        return "W"
+    elif p1[1] < p2[1]:
+        return "N"
+    else:
+        return "S"
+
+
+def opposite_direction(direction):
+    return {"N": "S", "E": "W", "S": "N", "W": "E"}[direction]
+
+
 def simple_cache(f):
     cache = dict()
 

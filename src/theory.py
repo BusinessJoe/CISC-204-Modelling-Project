@@ -172,14 +172,6 @@ class CosmicExpressTheory:
                         ).negate(),
                     )
                 )
-                self.theory.add_constraint(
-                    logic.implication(
-                        self.get_prop(name="rail_output", descriptor=d, coord=(x, y)),
-                        self.get_prop(
-                            name="rail_input", descriptor=d, coord=(x, y)
-                        ).negate(),
-                    )
-                )
 
             # Only one of the input directions can be true. The same holds for output directions
             for io in ("rail_input", "rail_output"):
@@ -264,6 +256,7 @@ class CosmicExpressTheory:
 
     def add_rail_state_constraints(self):
         for coord in helpers.all_coords(self.size):
+            pass
             # No rail means no train alien
             self.theory.add_constraint(
                 logic.implication(
@@ -370,10 +363,18 @@ class CosmicExpressTheory:
                         if self.grid_contains(adjacent1)
                     ),
                     # then no alien gets on the train
-                    logic.none_of(
-                        self.get_props(
-                            name="train_alien_after_color",
-                            coord=coord,
+                    logic.implication(
+                        logic.none_of(
+                            self.get_props(
+                                name="train_alien_before_color",
+                                coord=coord,
+                            ),
+                        ),
+                        logic.none_of(
+                            self.get_props(
+                                name="train_alien_after_color",
+                                coord=coord,
+                            ),
                         ),
                     ),
                 )
@@ -414,7 +415,7 @@ class CosmicExpressTheory:
                     logic.multi_and(
                         logic.implication(
                             self.get_prop(
-                                name="train_alien_after_color",
+                                name="train_alien_before_color",
                                 descriptor=c,
                                 coord=coord,
                             ),
@@ -463,7 +464,8 @@ class CosmicExpressTheory:
 
     def add_satisfaction_constraints(self):
         for coord in helpers.all_coords(self.size):
-            # Every alien must be satisfied
+            # Every alien must be satisfied and
+            # no alien means alien is not satisfied
             self.theory.add_constraint(
                 logic.equal(
                     self.get_prop(name="alien", coord=coord),
@@ -471,13 +473,16 @@ class CosmicExpressTheory:
                 )
             )
 
-            # Every house must be satisfied
+            # Every house must be satisfied and
+            # no house means house is not satisfied
             self.theory.add_constraint(
                 logic.equal(
                     self.get_prop(name="house", coord=coord),
                     self.get_prop(name="house_satisfied", coord=coord),
                 )
             )
+
+            # No alien means alien is not satisfied
 
     def _rail_satisfies_alien_color(self, rail_coord, alien_coord, color) -> Var:
         return (
@@ -539,18 +544,12 @@ class CosmicExpressTheory:
 
         # adjacency check using taxicab distance
         if abs(p1[0] - p2[0]) + abs(p1[1] - p2[1]) == 1:
-            parts = []
-            for direction, opposite_direction in zip("NESW", "SWNE"):
-                parts.append(
-                    self.get_prop(name="rail_input", descriptor=direction, coord=p2)
-                    & self.get_prop(
-                        name="rail_output", descriptor=opposite_direction, coord=p1
-                    )
-                )
-            return logic.multi_or(parts)
+            direction = helpers.direction_between(p1, p2)
+
+            return self.get_prop(name="rail_output", descriptor=direction, coord=p1)
 
         parts = []
-        for _, _, p3 in helpers.get_directions(p2):
+        for p3 in helpers.get_adjacent(p2):
             if self.grid_contains(p3):
                 parts.append(
                     self.rail_comes_before(p1, p3) & self.rail_comes_before(p3, p2)
