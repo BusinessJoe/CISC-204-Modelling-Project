@@ -1,19 +1,48 @@
 import tkinter as tk
 from PIL import Image, ImageTk
+import numpy as np
+from numpy.lib.arraysetops import isin
 
 
 COLORS = [
-    "purple",
-    "orange",
-    "red",
-    "green",
-    "blue",
-    "pink",
-    "yellow",
-    "brown",
-    "black",
-    "white",
+    "#c71111",
+    "#132fd2",
+    "#10802d",
+    "#ee55ba",
+    "#f17d0e",
+    "#f6f757",
+    "#3f484e",
+    "#d6e1f0",
+    "#6b30bc",
+    "#72491c",
 ]
+
+
+def hex2rgb(hexcode):
+    hexcode = hexcode[1:]
+    r = int(hexcode[:2], 16)
+    g = int(hexcode[2:4], 16)
+    b = int(hexcode[4:6], 16)
+    return r, g, b
+
+
+def _recolor_image(im, to_change, result):
+    if isinstance(to_change, str):
+        to_change = hex2rgb(to_change)
+    if isinstance(result, str):
+        result = hex2rgb(result)
+
+    im = im.convert("RGBA")
+
+    data = np.array(im)  # "data" is a height x width x 4 numpy array
+    red, green, blue, alpha = data.T  # Temporarily unpack the bands for readability
+
+    # Replace white with red... (leaves alpha values alone...)
+    areas = red == to_change[0] & (green == to_change[1]) & (blue == to_change[2])
+    data[..., :-1][areas.T] = result  # Transpose back needed
+
+    im2 = Image.fromarray(data)
+    return im2
 
 
 class Tile(tk.Frame):
@@ -54,8 +83,14 @@ class Alien(Tile):
         super().__init__(parent, *args, **kwargs)
 
     def add_image(self) -> None:
-        self.canvas.configure(background=self.color_string)
-        self.image = ImageTk.PhotoImage(Image.open("data/icons/alien.png"))
+        im = Image.open("data/icons/alien_green.png")
+        im2 = _recolor_image(im, "#00FF00", "#FF0000")
+        im2.show()
+        self.image = ImageTk.PhotoImage(
+            _recolor_image(
+                Image.open("data/icons/alien_green.png"), (0, 255, 0), self.color_string
+            )
+        )
         self.canvas.create_image(self.width / 2, self.height / 2, image=self.image)
 
 
@@ -81,12 +116,18 @@ class Rail(Tile):
     def __init__(self, parent, in_direction, out_direction, *args, **kwargs):
         self.in_direction = in_direction
         self.out_direction = out_direction
+        self.in_color = None
+        self.out_color = None
         super().__init__(parent, *args, **kwargs)
 
     def add_image(self) -> None:
+
         self.in_image = ImageTk.PhotoImage(
             self.rotate_image(
-                self.in_direction, Image.open("data/icons/rail_half_in.png")
+                self.in_direction,
+                _recolor_image(
+                    Image.open("data/icons/rail_half_in.png"), (0, 0, 0), (255, 0, 0)
+                ),
             )
         )
         self.out_image = ImageTk.PhotoImage(
@@ -112,3 +153,9 @@ class Exit(Tile):
     def add_image(self) -> None:
         self.image = ImageTk.PhotoImage(Image.open("data/icons/exit.png"))
         self.canvas.create_image(self.width / 2, self.height / 2, image=self.image)
+
+
+if __name__ == "__main__":
+    im = Image.open("data/icons/rail_half_in.png")
+    im2 = _recolor_image(im, "#000000", "#FF0000")
+    im2.show()
