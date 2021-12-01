@@ -25,22 +25,27 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
     for coord in data["entrances"]:
         theory.add_constraint(theory_wrapper.get_prop(name="entrance", coord=coord))
         non_empty_coords.append(coord)
+
     for coord in data["exits"]:
         theory.add_constraint(theory_wrapper.get_prop(name="exit", coord=coord))
         non_empty_coords.append(coord)
+
     for color, coord in data["aliens"]:
         theory.add_constraint(
             theory_wrapper.get_prop(name="alien_color", descriptor=color, coord=coord)
         )
         non_empty_coords.append(coord)
+
     for color, coord in data["houses"]:
         theory.add_constraint(
             theory_wrapper.get_prop(name="house_color", descriptor=color, coord=coord)
         )
         non_empty_coords.append(coord)
+
     for coord in data["obstacles"]:
         theory.add_constraint(theory_wrapper.get_prop(name="obstacle", coord=coord))
         non_empty_coords.append(coord)
+
     for directions, coord in data["rails"]:
         theory.add_constraint(
             theory_wrapper.get_prop(
@@ -52,11 +57,13 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
                 name="rail_output", descriptor=directions[1], coord=coord
             )
         )
+        theory.add_constraint(theory_wrapper.get_prop(name="rail", coord=coord))
         non_empty_coords.append(coord)
 
-    for x in range(data["cols"]):
-        for y in range(data["rows"]):
-            if (x, y) not in non_empty_coords:
+    for c in range(data["cols"]):
+        for r in range(data["rows"]):
+            if (c, r) not in non_empty_coords:
+                coord = (c, r)
                 theory.add_constraint(
                     logic.none_of(
                         theory_wrapper.get_prop(name="alien", coord=coord),
