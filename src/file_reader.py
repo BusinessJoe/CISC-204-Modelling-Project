@@ -17,8 +17,7 @@ def read_file(file: TextIO) -> tuple[Encoding, Any]:
     if len(data["exits"]) != 1:
         raise ValueError("there must be exactly one exit")
 
-    # TODO: replace the number of colors with value calculated from the file
-    theory_wrapper = CosmicExpressTheory((data["rows"], data["cols"]), 3)
+    theory_wrapper = CosmicExpressTheory((data["rows"], data["cols"]), data["colors"])
     theory = theory_wrapper.theory
 
     non_empty_coords = []

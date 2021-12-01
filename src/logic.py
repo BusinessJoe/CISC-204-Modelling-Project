@@ -2,7 +2,7 @@
 import operator
 from functools import reduce
 from typing import Any
-from nnf import Var
+from nnf import Var, true, false
 
 
 def _is_iterable(arg: Any) -> bool:
@@ -33,14 +33,22 @@ def implication(left: Var, right: Var) -> Var:
     return left.negate() | right
 
 
+def equal(left: Var, right: Var) -> Var:
+    return implication(left, right) & implication(right, left)
+
+
+def if_else(condition: Var, on_pass: Var, on_fail: Var) -> Var:
+    return implication(condition, on_pass) & implication(condition.negate(), on_fail)
+
+
 @_expand_iterable
 def multi_or(*args: Var) -> Var:
-    return reduce(operator.__or__, args)
+    return reduce(operator.__or__, args, false)
 
 
 @_expand_iterable
 def multi_and(*args: Var) -> Var:
-    return reduce(operator.__and__, args)
+    return reduce(operator.__and__, args, true)
 
 
 @_expand_iterable

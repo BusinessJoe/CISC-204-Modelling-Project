@@ -1,4 +1,5 @@
 from itertools import product
+from typing import Generator
 from nnf import Var, false
 
 Coord = tuple[int, int]
@@ -27,6 +28,12 @@ def get_directions(coord: Coord):
         yield direction, opposite_direction, offset_coord
 
 
+def get_adjacent(coord: Coord) -> Generator[Coord, None, None]:
+    for offset in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+        offset_coord = coord[0] + offset[0], coord[1] + offset[1]
+        yield offset_coord
+
+
 def simple_cache(f):
     cache = dict()
 
@@ -34,7 +41,10 @@ def simple_cache(f):
         if args in cache:
             return cache[args]
 
-        print("new args:", args)
+        # print("new args:", args)
+        # This needs to be false for some reason
+        # Without it the function recurses infinitely
+        # The problem is probably in the wrapped function
         cache[args] = false
         cache[args] = f(self, *args)
         return cache[args]

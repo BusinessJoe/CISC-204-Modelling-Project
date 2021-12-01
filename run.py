@@ -16,10 +16,62 @@ if __name__ == "__main__":
     print("\nSatisfiable: %s" % satisfiable)
 
     if satisfiable:
+        print(T.size())
         print(f"# Solutions: {T.count_solutions()}")
-        print("Solution:")
+        print("Solutions:")
+
         solution = T.solve()
-        true_part = {k: v for k, v in solution.items() if v}
-        false_part = {k: v for k, v in solution.items() if not v}
-        pprint(true_part)
-        pprint(false_part)
+
+        def summarize(solution):
+            # Do some filtering
+            solution = {k: v for k, v in solution.items() if isinstance(k, str)}
+
+            alien_coords = {
+                k.split(":")[1]
+                for k, v in solution.items()
+                if v and k.split(":")[0] == "alien"
+            }
+            house_coords = {
+                k.split(":")[1]
+                for k, v in solution.items()
+                if v and k.split(":")[0] == "house"
+            }
+            rail_coords = {
+                k.split(":")[1]
+                for k, v in solution.items()
+                if v and k.split(":")[0] == "rail"
+            }
+
+            pprint(
+                {k: v for k, v in solution.items() if v and k.split(":")[0] == "alien"}
+            )
+            pprint(
+                {k: v for k, v in solution.items() if v and k.split(":")[0] == "house"}
+            )
+            pprint(
+                {k: v for k, v in solution.items() if v and k.split(":")[0] == "rail"}
+            )
+            pprint(
+                {
+                    k: v
+                    for k, v in solution.items()
+                    if k.split(":")[1] in alien_coords and k.startswith("alien_sat")
+                }
+            )
+            pprint(
+                {
+                    k: v
+                    for k, v in solution.items()
+                    if k.split(":")[1] in house_coords and k.startswith("house_sat")
+                }
+            )
+            pprint(
+                {
+                    k: v
+                    for k, v in solution.items()
+                    if k.split(":")[1] in rail_coords and k.startswith("train_")
+                }
+            )
+
+        for solution in T.models():
+            summarize(solution)
