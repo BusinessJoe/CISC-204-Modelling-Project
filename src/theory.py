@@ -513,12 +513,9 @@ class CosmicExpressTheory:
         return (
             # If coord is a rail,
             self.get_prop(name="rail", coord=rail_coord)
-            # and the train is full
-            & logic.multi_or(
-                self.get_props(
-                    name="train_alien_before_color",
-                    coord=rail_coord,
-                )
+            # and the train has an alien of given color
+            & self.get_prop(
+                name="train_alien_before_color", descriptor=color, coord=rail_coord
             )
             # and adjacent tile is an house of given color
             & self.get_prop(name="house_color", descriptor=color, coord=house_coord)
