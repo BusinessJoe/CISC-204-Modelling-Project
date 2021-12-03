@@ -6,7 +6,7 @@ from .theory import CosmicExpressTheory
 from . import logic
 
 
-def read_file(file: TextIO) -> tuple[Encoding, Any]:
+def read_file(file: TextIO) -> Encoding:
     # Reverse the order of rows since row 0 refers to the bottom row
     xml = file.read()
 
