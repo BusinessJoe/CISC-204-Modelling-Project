@@ -18,19 +18,13 @@ class GridDisplay(tk.Frame):
 
         self.set_grid_size(size)
 
-        self.create_layout()
-
     def clear_grid(self):
         for tile in self.grid_items.values():
             tile.destroy()
         self.grid_items.clear()
 
     def set_grid_size(self, size):
-        # Prune grid
-        for x, y in list(self.grid_items):
-            if x >= size[1] or y >= size[0]:
-                self.grid_items.pop((x, y)).destroy()
-
+        self.clear_grid()
         # Expand grid
         for x in range(size[1]):
             for y in range(size[0]):
@@ -46,7 +40,11 @@ class GridDisplay(tk.Frame):
 
     def add_grid_item(self, item, coord):
         item.grid(
-            row=self.size[0] - coord[1] - 1, column=coord[0], ipadx=0, sticky=tk.NS
+            # Transform row so that the positive direction is up
+            row=self.size[0] - coord[1] - 1,
+            column=coord[0],
+            ipadx=0,
+            sticky=tk.NS,
         )
         item.bind("<Button-1>", self.create_handle_click(coord))
 

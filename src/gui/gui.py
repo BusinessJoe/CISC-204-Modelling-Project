@@ -1,11 +1,13 @@
+import io
 import tkinter as tk
 from tkinter.messagebox import showerror
 import tkinter.filedialog as filedialog
 from src import xml_parser
+from src.file_reader import read_file
 
 from src.gui.grid import GridDisplay
 from src.gui.tile_settings import TileSettings
-from src.gui.tiles import Rail
+from src.gui.tiles import COLORS, Rail
 
 
 class Application(tk.Frame):
@@ -50,6 +52,12 @@ class Application(tk.Frame):
         export.grid(row=0, column=1)
         file_frame.pack(pady=(30, 10))
 
+        theory_frame = tk.Frame(right_panel)
+        tk.Button(
+            theory_frame, text="Validate solution", command=self._handle_solve
+        ).grid(row=0, column=0)
+        theory_frame.pack()
+
     def _handle_set_size(self):
         size = int(self.rows_entry.get()), int(self.cols_entry.get())
         self.grid_display.set_grid_size(size)
@@ -85,3 +93,40 @@ class Application(tk.Frame):
 
     def _create_tile(self, parent):
         return self.tile_settings.get_tile(parent)
+
+    def _handle_solve(self):
+        # Clear rail colors
+        for tile in self.grid_display.grid_items.values():
+            if isinstance(tile, Rail):
+                tile.in_color = None
+                tile.out_color = None
+                tile.reload()
+
+        data = io.StringIO()
+        xml = self.grid_display.export()
+        data.write(xml)
+        data.seek(0)
+
+        T = read_file(data)
+        if not T.is_satisfiable():
+            showerror("Error", "board is not solvable")
+            return
+
+        solution = T.solve()
+
+        train_states = [k for k, v in solution.items() if v and k.startswith("train")]
+
+        for k in train_states:
+            coord = eval(k.split(":")[1])
+            k = k.split(":")[0]
+            # before or after
+            rail_type = k.split("_")[2]
+            color = COLORS[int(k.split("_")[4])]
+
+            tile = self.grid_display.grid_items[coord]
+            if rail_type == "before":
+                tile.in_color = color
+            else:
+                tile.out_color = color
+
+            tile.reload()

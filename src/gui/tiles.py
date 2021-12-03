@@ -54,22 +54,28 @@ class Tile(tk.Frame):
         self.canvas = tk.Canvas(
             self, width=self.width, height=self.height, bd=0, highlightthickness=0
         )
+        self.canvas.pack()
+
+        self.reload()
+
+    def add_image(self) -> None:
+        pass
+
+    def add_border(self):
         self.border_image = ImageTk.PhotoImage(Image.open("data/icons/border.png"))
 
         self.canvas.create_image(
             self.width / 2, self.height / 2, image=self.border_image
         )
 
-        self.add_image()
-
-        self.canvas.pack()
-
-    def add_image(self) -> None:
-        pass
-
     def bind(self, *args, **kwargs):
         """Forward bind to canvas"""
         self.canvas.bind(*args, **kwargs)
+
+    def reload(self):
+        self.canvas.delete("all")
+        self.add_image()
+        self.add_border()
 
 
 class Empty(Tile):
@@ -113,28 +119,32 @@ class Obstacle(Tile):
 
 
 class Rail(Tile):
-    def __init__(self, parent, in_direction, out_direction, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        in_direction,
+        out_direction,
+        in_color=None,
+        out_color=None,
+        *args,
+        **kwargs
+    ):
         self.in_direction = in_direction
         self.out_direction = out_direction
-        self.in_color = None
-        self.out_color = None
+        self.in_color = in_color
+        self.out_color = out_color
         super().__init__(parent, *args, **kwargs)
 
     def add_image(self) -> None:
+        im = Image.open("data/icons/rail_half_in.png")
+        if self.in_color:
+            im = _recolor_image(im, (0, 0, 0), self.in_color)
+        self.in_image = ImageTk.PhotoImage(self.rotate_image(self.in_direction, im))
 
-        self.in_image = ImageTk.PhotoImage(
-            self.rotate_image(
-                self.in_direction,
-                _recolor_image(
-                    Image.open("data/icons/rail_half_in.png"), (0, 0, 0), (255, 0, 0)
-                ),
-            )
-        )
-        self.out_image = ImageTk.PhotoImage(
-            self.rotate_image(
-                self.out_direction, Image.open("data/icons/rail_half_out.png")
-            )
-        )
+        im = Image.open("data/icons/rail_half_out.png")
+        if self.out_color:
+            im = _recolor_image(im, (0, 0, 0), self.out_color)
+        self.out_image = ImageTk.PhotoImage(self.rotate_image(self.out_direction, im))
         self.canvas.create_image(self.width / 2, self.height / 2, image=self.in_image)
         self.canvas.create_image(self.width / 2, self.height / 2, image=self.out_image)
 
