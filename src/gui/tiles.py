@@ -26,7 +26,7 @@ def hex2rgb(hexcode):
     return r, g, b
 
 
-def _recolor_image(im, to_change, result):
+def _recolor_image(im, to_change, result, tolerance=0):
     if isinstance(to_change, str):
         to_change = hex2rgb(to_change)
     if isinstance(result, str):
@@ -38,7 +38,12 @@ def _recolor_image(im, to_change, result):
     red, green, blue, alpha = data.T  # Temporarily unpack the bands for readability
 
     # Replace white with red... (leaves alpha values alone...)
-    areas = red == to_change[0] & (green == to_change[1]) & (blue == to_change[2])
+    areas = (
+        np.isclose(red, np.full(red.shape, to_change[0]), atol=tolerance)
+        & np.isclose(green, np.full(green.shape, to_change[1]), atol=tolerance)
+        & np.isclose(blue, np.full(blue.shape, to_change[2]), atol=tolerance)
+    )
+
     data[..., :-1][areas.T] = result  # Transpose back needed
 
     im2 = Image.fromarray(data)
@@ -94,7 +99,10 @@ class Alien(Tile):
         im2.show()
         self.image = ImageTk.PhotoImage(
             _recolor_image(
-                Image.open("data/icons/alien_green.png"), (0, 255, 0), self.color_string
+                Image.open("data/icons/alien_green.png"),
+                (0, 255, 0),
+                self.color_string,
+                130,
             )
         )
         self.canvas.create_image(self.width / 2, self.height / 2, image=self.image)
