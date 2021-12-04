@@ -162,6 +162,15 @@ class CosmicExpressTheory:
                 )
             )
 
+            # Each rail must have an input and output
+            self.theory.add_constraint(
+                logic.implication(
+                    self.get_prop(name="rail", coord=(x, y)),
+                    logic.one_of(self.get_props(name="rail_input", coord=(x, y)))
+                    & logic.one_of(self.get_props(name="rail_output", coord=(x, y))),
+                )
+            )
+
             # Input direction cannot be the same as the output direction
             for d in self.directions:
                 self.theory.add_constraint(
@@ -501,7 +510,12 @@ class CosmicExpressTheory:
             # TODO: only check empty adjacent rails
             & logic.multi_and(
                 logic.implication(
-                    self.get_prop(name="rail", coord=other_rail),
+                    self.get_prop(name="rail", coord=other_rail)
+                    & logic.none_of(
+                        self.get_props(
+                            name="train_alien_before_color", coord=other_rail
+                        )
+                    ),
                     self.rail_comes_before(rail_coord, other_rail),
                 )
                 for other_rail in helpers.get_adjacent(alien_coord)
@@ -520,10 +534,15 @@ class CosmicExpressTheory:
             # and adjacent tile is an house of given color
             & self.get_prop(name="house_color", descriptor=color, coord=house_coord)
             # and the rail comes before any other rails adjacent to house
-            # TODO: only check empty adjacent rails
+            # TODO: only check adjacent rails with color
             & logic.multi_and(
                 logic.implication(
-                    self.get_prop(name="rail", coord=other_rail),
+                    self.get_prop(name="rail", coord=other_rail)
+                    & self.get_prop(
+                        name="train_alien_before_color",
+                        descriptor=color,
+                        coord=other_rail,
+                    ),
                     self.rail_comes_before(rail_coord, other_rail),
                 )
                 for other_rail in helpers.get_adjacent(house_coord)
