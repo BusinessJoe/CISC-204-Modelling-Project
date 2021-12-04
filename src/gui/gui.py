@@ -53,10 +53,15 @@ class Application(tk.Frame):
         file_frame.pack(pady=(30, 10))
 
         theory_frame = tk.Frame(right_panel)
-        tk.Button(
-            theory_frame, text="Validate solution", command=self._handle_solve
-        ).grid(row=0, column=0)
         theory_frame.pack()
+        tk.Button(
+            theory_frame, text="Validate solution", command=self._handle_check_solution
+        ).grid(row=0, column=0)
+        tk.Button(
+            theory_frame,
+            text="Generate solution",
+            command=self._handle_generate_solution,
+        ).grid(row=1, column=0)
 
     def _handle_set_size(self):
         size = int(self.rows_entry.get()), int(self.cols_entry.get())
@@ -94,7 +99,7 @@ class Application(tk.Frame):
     def _create_tile(self, parent):
         return self.tile_settings.get_tile(parent)
 
-    def _handle_solve(self):
+    def _handle_check_solution(self):
         # Clear rail colors
         for tile in self.grid_display.grid_items.values():
             if isinstance(tile, Rail):
@@ -130,3 +135,73 @@ class Application(tk.Frame):
                 tile.out_color = color
 
             tile.reload()
+
+    def _handle_generate_solution(self):
+        # Clear rail colors
+        for tile in self.grid_display.grid_items.values():
+            if isinstance(tile, Rail):
+                tile.in_color = None
+                tile.out_color = None
+                tile.reload()
+
+        data = io.StringIO()
+        xml = self.grid_display.export()
+        data.write(xml)
+        data.seek(0)
+
+        T = read_file(data, True)
+        if not T.is_satisfiable():
+            showerror("Error", "board is not solvable")
+            return
+
+        solution = T.solve()
+
+        rail_ins = {
+            k.split(":")[1]: k.split(":")[0]
+            for k, v in solution.items()
+            if v and k.startswith("rail_input")
+        }
+        rail_outs = {
+            k.split(":")[1]: k.split(":")[0]
+            for k, v in solution.items()
+            if v and k.startswith("rail_output")
+        }
+        train_ins = {
+            k.split(":")[1]: k.split(":")[0]
+            for k, v in solution.items()
+            if v and k.startswith("train_alien_before")
+        }
+        train_outs = {
+            k.split(":")[1]: k.split(":")[0]
+            for k, v in solution.items()
+            if v and k.startswith("train_alien_after")
+        }
+
+        print(rail_ins)
+        print(train_ins)
+
+        for k in rail_ins:
+            coord = eval(k)
+            k = k.split(":")[0]
+            # before or after
+            rail_in_dir = rail_ins[k].split("_")[2]
+            rail_out_dir = rail_outs[k].split("_")[2]
+
+            if k in train_ins:
+                in_color = train_ins[k].split("_")[4]
+                in_color = COLORS[int(in_color)]
+            else:
+                in_color = None
+
+            if k in train_outs:
+                out_color = train_outs[k].split("_")[4]
+                out_color = COLORS[int(out_color)]
+            else:
+                out_color = None
+
+            tile = Rail(
+                self.grid_display, rail_in_dir, rail_out_dir, in_color, out_color
+            )
+            self.grid_display.grid_items[coord] = tile
+
+        self.grid_display.create_layout()

@@ -1,12 +1,14 @@
 from typing import Any, TextIO
 
+from nnf import And
+
 from src.xml_parser import import_xml
 from .lib204 import Encoding
 from .theory import CosmicExpressTheory
 from . import logic
 
 
-def read_file(file: TextIO) -> Encoding:
+def read_file(file: TextIO, allow_new_rails: bool = False) -> Encoding:
     # Reverse the order of rows since row 0 refers to the bottom row
     xml = file.read()
 
@@ -69,11 +71,14 @@ def read_file(file: TextIO) -> Encoding:
                         theory_wrapper.get_prop(name="alien", coord=coord),
                         theory_wrapper.get_prop(name="house", coord=coord),
                         theory_wrapper.get_prop(name="obstacle", coord=coord),
-                        theory_wrapper.get_prop(name="rail", coord=coord),
                         theory_wrapper.get_prop(name="entrance", coord=coord),
                         theory_wrapper.get_prop(name="exit", coord=coord),
                     )
                 )
+                if not allow_new_rails:
+                    theory.add_constraint(
+                        theory_wrapper.get_prop(name="rail", coord=coord).negate()
+                    )
 
     return theory
 
