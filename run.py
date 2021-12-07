@@ -52,7 +52,7 @@ def summarize(solution):
 if __name__ == "__main__":
     from pprint import pprint
 
-    with open("data/xml/example_full_empty.xml", encoding="utf8") as f:
+    with open("data/xml/complex.xml", encoding="utf8") as f:
         T = read_file(f, True)
 
     satisfiable = T.is_satisfiable()
