@@ -1,7 +1,6 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 import numpy as np
-from numpy.lib.arraysetops import isin
 
 
 COLORS = [
@@ -51,8 +50,8 @@ def _recolor_image(im, to_change, result, tolerance=0):
 
 
 class Tile(tk.Frame):
-    width = 128
-    height = 128
+    width = 128 // 2
+    height = 128 // 2
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -67,7 +66,9 @@ class Tile(tk.Frame):
         pass
 
     def add_border(self):
-        self.border_image = ImageTk.PhotoImage(Image.open("data/icons/border.png"))
+        self.border_image = ImageTk.PhotoImage(
+            Image.open("data/icons/border.png").resize((self.width, self.height))
+        )
 
         self.canvas.create_image(
             self.width / 2, self.height / 2, image=self.border_image
@@ -94,12 +95,11 @@ class Alien(Tile):
         super().__init__(parent, *args, **kwargs)
 
     def add_image(self) -> None:
-        im = Image.open("data/icons/alien_green.png")
-        im2 = _recolor_image(im, "#00FF00", "#FF0000")
-        im2.show()
         self.image = ImageTk.PhotoImage(
             _recolor_image(
-                Image.open("data/icons/alien_green.png"),
+                Image.open("data/icons/alien_green.png").resize(
+                    (self.width, self.height)
+                ),
                 (0, 255, 0),
                 self.color_string,
                 130,
@@ -116,13 +116,17 @@ class House(Tile):
 
     def add_image(self) -> None:
         self.canvas.configure(bg=self.color_string)
-        self.image = ImageTk.PhotoImage(Image.open("data/icons/house.png"))
+        self.image = ImageTk.PhotoImage(
+            Image.open("data/icons/house.png").resize((self.width, self.height))
+        )
         self.canvas.create_image(self.width / 2, self.height / 2, image=self.image)
 
 
 class Obstacle(Tile):
     def add_image(self) -> None:
-        self.image = ImageTk.PhotoImage(Image.open("data/icons/obstacle.png"))
+        self.image = ImageTk.PhotoImage(
+            Image.open("data/icons/obstacle.png").resize((self.width, self.height))
+        )
         self.canvas.create_image(self.width / 2, self.height / 2, image=self.image)
 
 
@@ -144,12 +148,14 @@ class Rail(Tile):
         super().__init__(parent, *args, **kwargs)
 
     def add_image(self) -> None:
-        im = Image.open("data/icons/rail_half_in.png")
+        im = Image.open("data/icons/rail_half_in.png").resize((self.width, self.height))
         if self.in_color:
             im = _recolor_image(im, (0, 0, 0), self.in_color)
         self.in_image = ImageTk.PhotoImage(self.rotate_image(self.in_direction, im))
 
-        im = Image.open("data/icons/rail_half_out.png")
+        im = Image.open("data/icons/rail_half_out.png").resize(
+            (self.width, self.height)
+        )
         if self.out_color:
             im = _recolor_image(im, (0, 0, 0), self.out_color)
         self.out_image = ImageTk.PhotoImage(self.rotate_image(self.out_direction, im))
@@ -163,13 +169,17 @@ class Rail(Tile):
 
 class Entrance(Tile):
     def add_image(self) -> None:
-        self.image = ImageTk.PhotoImage(Image.open("data/icons/entrance.png"))
+        self.image = ImageTk.PhotoImage(
+            Image.open("data/icons/entrance.png").resize((self.width, self.height))
+        )
         self.canvas.create_image(self.width / 2, self.height / 2, image=self.image)
 
 
 class Exit(Tile):
     def add_image(self) -> None:
-        self.image = ImageTk.PhotoImage(Image.open("data/icons/exit.png"))
+        self.image = ImageTk.PhotoImage(
+            Image.open("data/icons/exit.png").resize((self.width, self.height))
+        )
         self.canvas.create_image(self.width / 2, self.height / 2, image=self.image)
 
 
