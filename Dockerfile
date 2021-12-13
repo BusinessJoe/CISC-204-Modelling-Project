@@ -8,17 +8,12 @@ RUN apt-get -yqq update
 RUN apt-get -yqq install python3-pip python3-dev curl gnupg build-essential vim git
 
 # copy our application code
-RUN mkdir /PROJECT
-WORKDIR /PROJECT
-
-# # install tkinter for gui
-# ARG DEBIAN_FRONTEND=noninteractive
-# ENV TZ=America/Toronto
-# RUN apt-get install -y python3-tk
+RUN mkdir /cosmicExpress
+WORKDIR /cosmicExpress
 
 # install required elements
 RUN pip3 install --upgrade pip
-ADD requirements.txt /PROJECT/requirements.txt
+ADD requirements.txt /cosmicExpress/requirements.txt
 RUN pip3 install -r requirements.txt
 
 # install dsharp to run in the container
