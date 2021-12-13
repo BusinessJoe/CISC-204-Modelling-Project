@@ -52,17 +52,19 @@ def summarize(solution):
 if __name__ == "__main__":
     from pprint import pprint
 
-    with open("data/xml/complex.xml", encoding="utf8") as f:
+    with open(sys.argv[1], encoding="utf8") as f:
         T = read_file(f, True)
 
     satisfiable = T.is_satisfiable()
-    print("\nSatisfiable: %s" % satisfiable)
+    print(f"Satisfiable: {satisfiable}\n")
 
     if satisfiable:
-        print(T.size())
-        print(f"# Solutions: {T.count_solutions()}")
-        print("Solutions:")
-        models = list(T.models())
+        num_solutions = T.count_solutions()
+        if num_solutions == 1:
+            print("There is 1 solution.\n")
+        else:
+            print(f"There are {num_solutions} solutions.\n")
+        print("One solution is:")
+        solution = T.solve()
 
-        for m in models:
-            summarize(m)
+        summarize(solution)
