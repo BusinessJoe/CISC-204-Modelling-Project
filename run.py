@@ -1,8 +1,5 @@
-from nnf import Var
-from src.file_reader import read_file
-from src.lib204 import Encoding
-
 import sys
+from src.file_reader import read_file
 
 sys.setrecursionlimit(10 ** 6)
 
