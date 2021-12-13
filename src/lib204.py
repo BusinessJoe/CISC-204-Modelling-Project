@@ -29,18 +29,18 @@ class Encoding(object):
 
     @config(sat_backend="pysat")
     def is_satisfiable(self):
-        return And(self.constraints).satisfiable()
+        return And(self.constraints).simplify().satisfiable()
 
     @config(sat_backend="pysat")
     def solve(self):
-        return And(self.constraints).solve()
+        return And(self.constraints).simplify().solve()
 
     def count_solutions(self, lits=[]):
         if lits:
             T = And(self.constraints + lits)
         else:
             T = And(self.constraints)
-
+        T = T.simplify()
         if not T.satisfiable():
             return 0
 
