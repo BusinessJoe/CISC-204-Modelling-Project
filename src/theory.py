@@ -98,400 +98,386 @@ class CosmicExpressTheory:
 
     def add_constraints(self) -> None:
         """Adds all of the required contraints to the theory"""
-        self.add_alien_constraints()
-        self.add_house_constraints()
-        self.add_rail_connection_constraints()
-        self.add_rail_state_constraints()
-        self.add_satisfaction_constraints()
 
-        for x, y in helpers.all_coords(self.size):
+        for coord in helpers.all_coords(self.size):
+            self.add_alien_constraints(coord)
+            self.add_house_constraints(coord)
+            self.add_rail_connection_constraints(coord)
+            self.add_rail_state_constraints(coord)
+            self.add_satisfaction_constraints(coord)
 
             # Each tile can only be an alien, house, obstacle, regular rail, special rail, or nothing.
             self.theory.add_constraint(
                 logic.one_of_or_none(
-                    self.get_prop(name="alien", coord=(x, y)),
-                    self.get_prop(name="house", coord=(x, y)),
-                    self.get_prop(name="obstacle", coord=(x, y)),
-                    self.get_prop(name="rail", coord=(x, y)),
-                    self.get_prop(name="entrance", coord=(x, y)),
-                    self.get_prop(name="exit", coord=(x, y)),
+                    self.get_prop(name="alien", coord=coord),
+                    self.get_prop(name="house", coord=coord),
+                    self.get_prop(name="obstacle", coord=coord),
+                    self.get_prop(name="rail", coord=coord),
+                    self.get_prop(name="entrance", coord=coord),
+                    self.get_prop(name="exit", coord=coord),
                 )
             )
 
-    def add_alien_constraints(self) -> None:
-        for x, y in helpers.all_coords(self.size):
-            # If an alien of any color is present, then an alien is present
-            self.theory.add_constraint(
-                logic.implication(
-                    logic.multi_or(self.get_props(name="alien_color", coord=(x, y))),
-                    self.get_prop(name="alien", coord=(x, y)),
-                )
+    def add_alien_constraints(self, coord) -> None:
+        # If an alien of any color is present, then an alien is present
+        self.theory.add_constraint(
+            logic.equal(
+                logic.one_of(self.get_props(name="alien_color", coord=coord)),
+                self.get_prop(name="alien", coord=coord),
             )
+        )
 
-            # Each alien must only have one color
-            self.theory.add_constraint(
-                logic.one_of_or_none(self.get_props(name="alien_color", coord=(x, y)))
+        # Each alien must only have one color
+        self.theory.add_constraint(
+            logic.one_of_or_none(self.get_props(name="alien_color", coord=coord))
+        )
+
+    def add_house_constraints(self, coord) -> None:
+        # If a house of any color is present, then a house is present
+        self.theory.add_constraint(
+            logic.equal(
+                logic.one_of(self.get_props(name="house_color", coord=coord)),
+                self.get_prop(name="house", coord=coord),
             )
+        )
 
-    def add_house_constraints(self) -> None:
-        for x, y in helpers.all_coords(self.size):
-            # If a house of any color is present, then a house is present
-            self.theory.add_constraint(
-                logic.implication(
-                    logic.multi_or(self.get_props(name="house_color", coord=(x, y))),
-                    self.get_prop(name="house", coord=(x, y)),
-                )
-            )
+        # Each house must only have one color
+        self.theory.add_constraint(
+            logic.one_of_or_none(self.get_props(name="house_color", coord=coord))
+        )
 
-            # Each house must only have one color
-            self.theory.add_constraint(
-                logic.one_of_or_none(self.get_props(name="house_color", coord=(x, y)))
-            )
-
-    def add_rail_connection_constraints(self) -> None:
+    def add_rail_connection_constraints(self, coord) -> None:
         """Ensures that the rails form a single, connected path from the entrance to exit"""
-        for x, y in helpers.all_coords(self.size):
-            # If an input or output rail direction is present then a rail is present
-            self.theory.add_constraint(
-                logic.implication(
-                    logic.multi_or(
-                        *self.get_props(name="rail_input", coord=(x, y)),
-                        *self.get_props(name="rail_output", coord=(x, y)),
-                    ),
-                    self.get_prop(name="rail", coord=(x, y)),
-                )
+        # If an input or output rail direction is present then a rail is present
+        self.theory.add_constraint(
+            logic.equal(
+                logic.multi_or(self.get_props(name="rail_input", coord=coord)),
+                self.get_prop(name="rail", coord=coord),
             )
-
-            # Each rail must have an input and output
-            self.theory.add_constraint(
-                logic.implication(
-                    self.get_prop(name="rail", coord=(x, y)),
-                    logic.one_of(self.get_props(name="rail_input", coord=(x, y)))
-                    & logic.one_of(self.get_props(name="rail_output", coord=(x, y))),
-                )
+        )
+        self.theory.add_constraint(
+            logic.equal(
+                logic.multi_or(self.get_props(name="rail_output", coord=coord)),
+                self.get_prop(name="rail", coord=coord),
             )
+        )
 
-            # Input direction cannot be the same as the output direction
-            for d in self.directions:
+        # Input direction cannot be the same as the output direction
+        self.theory.add_constraint(
+            logic.multi_and(
+                logic.implication(
+                    self.get_prop(name="rail_input", descriptor=d, coord=coord),
+                    self.get_prop(
+                        name="rail_output", descriptor=d, coord=coord
+                    ).negate(),
+                )
+                for d in self.directions
+            )
+        )
+
+        # Only one of the input directions can be true. The same holds for output directions
+        self.theory.add_constraint(
+            logic.one_of_or_none(self.get_props(name="rail_input", coord=coord))
+        )
+        self.theory.add_constraint(
+            logic.one_of_or_none(self.get_props(name="rail_output", coord=coord))
+        )
+
+        # Each rail connects to two of: another rail, entrance, or exit
+        for direction, opposite_direction, offset_coord in helpers.get_directions(
+            coord
+        ):
+            if self.grid_contains(offset_coord):
                 self.theory.add_constraint(
                     logic.implication(
-                        self.get_prop(name="rail_input", descriptor=d, coord=(x, y)),
                         self.get_prop(
-                            name="rail_output", descriptor=d, coord=(x, y)
+                            name="rail_output", descriptor=direction, coord=coord
+                        ),
+                        logic.one_of(
+                            self.get_prop(
+                                name="rail_input",
+                                descriptor=opposite_direction,
+                                coord=offset_coord,
+                            ),
+                            self.get_prop(name="exit", coord=offset_coord),
+                        ),
+                    )
+                )
+
+                self.theory.add_constraint(
+                    logic.implication(
+                        self.get_prop(
+                            name="rail_input", descriptor=direction, coord=coord
+                        ),
+                        logic.one_of(
+                            self.get_prop(
+                                name="rail_output",
+                                descriptor=opposite_direction,
+                                coord=offset_coord,
+                            ),
+                            self.get_prop(name="entrance", coord=offset_coord),
+                        ),
+                    )
+                )
+
+        # Entrances need a single rail taking input from them
+        self.theory.add_constraint(
+            logic.implication(
+                self.get_prop(name="entrance", coord=coord),
+                logic.one_of(
+                    self.get_prop(
+                        name="rail_input",
+                        descriptor=helpers.direction_between(offset_coord, coord),
+                        coord=offset_coord,
+                    )
+                    for offset_coord in helpers.get_adjacent(coord)
+                    if self.grid_contains(offset_coord)
+                ),
+            )
+        )
+
+        # Exits need a single rail outputting to them
+        self.theory.add_constraint(
+            logic.implication(
+                self.get_prop(name="exit", coord=coord),
+                logic.one_of(
+                    self.get_prop(
+                        name="rail_output",
+                        descriptor=helpers.direction_between(offset_coord, coord),
+                        coord=offset_coord,
+                    )
+                    for offset_coord in helpers.get_adjacent(coord)
+                    if self.grid_contains(offset_coord)
+                ),
+            )
+        )
+
+    def add_rail_state_constraints(self, coord):
+        # No rail means no alien on train
+        self.theory.add_constraint(
+            logic.implication(
+                self.get_prop(name="rail", coord=coord).negate(),
+                logic.none_of(
+                    *self.get_props(name="train_alien_before_color", coord=coord),
+                    *self.get_props(name="train_alien_after_color", coord=coord),
+                ),
+            )
+        )
+
+        # Only one color can be true
+        self.theory.add_constraint(
+            logic.one_of_or_none(
+                self.get_props(name="train_alien_before_color", coord=coord)
+            )
+        )
+        self.theory.add_constraint(
+            logic.one_of_or_none(
+                self.get_props(name="train_alien_after_color", coord=coord)
+            )
+        )
+
+        # After state of one rail becomes before state of the next
+        for c in self.colors:
+            for direction, _, offset_coord in helpers.get_directions(coord):
+                if self.grid_contains(offset_coord):
+                    self.theory.add_constraint(
+                        logic.implication(
+                            self.get_prop(
+                                name="rail_output",
+                                descriptor=direction,
+                                coord=coord,
+                            ),
+                            logic.equal(
+                                self.get_prop(
+                                    name="train_alien_after_color",
+                                    descriptor=c,
+                                    coord=coord,
+                                ),
+                                self.get_prop(
+                                    name="train_alien_before_color",
+                                    descriptor=c,
+                                    coord=offset_coord,
+                                ),
+                            ),
+                        )
+                    )
+
+        for offset_coord in helpers.get_adjacent(coord):
+            if self.grid_contains(offset_coord):
+                self.theory.add_constraint(
+                    logic.implication(
+                        self.get_prop(name="entrance", coord=offset_coord),
+                        logic.none_of(
+                            self.get_props(
+                                name="train_alien_before_color",
+                                coord=coord,
+                            )
+                        ),
+                    )
+                )
+                self.theory.add_constraint(
+                    logic.implication(
+                        self.get_prop(name="exit", coord=offset_coord),
+                        logic.none_of(
+                            self.get_props(
+                                name="train_alien_after_color",
+                                coord=coord,
+                            )
+                        ),
+                    )
+                )
+
+        # Rail satisfies alien -> alien gets on train
+        self.theory.add_constraint(
+            logic.multi_and(
+                logic.multi_and(
+                    logic.implication(
+                        self._rail_satisfies_alien_color(coord, adjacent1, c),
+                        # then the alien gets on the train
+                        self.get_prop(
+                            name="train_alien_after_color",
+                            descriptor=c,
+                            coord=coord,
+                        ),
+                    )
+                    for c in self.colors
+                )
+                for adjacent1 in helpers.get_adjacent(coord)
+                if self.grid_contains(adjacent1)
+            )
+        )
+
+        # No alien satisfies rail -> no alien gets on train
+        self.theory.add_constraint(
+            logic.implication(
+                self.get_prop(name="rail", coord=coord)
+                # If no aliens satisfy the rail
+                & logic.none_of(
+                    self._rail_satisfies_alien_color(coord, adjacent1, c)
+                    for c in self.colors
+                    for adjacent1 in helpers.get_adjacent(coord)
+                    if self.grid_contains(adjacent1)
+                ),
+                # then no alien gets on the train
+                logic.implication(
+                    logic.none_of(
+                        self.get_props(
+                            name="train_alien_before_color",
+                            coord=coord,
+                        ),
+                    ),
+                    logic.none_of(
+                        self.get_props(
+                            name="train_alien_after_color",
+                            coord=coord,
+                        ),
+                    ),
+                ),
+            )
+        )
+
+        # Rail satisfies house -> alien gets off train
+        self.theory.add_constraint(
+            logic.multi_and(
+                logic.multi_and(
+                    logic.implication(
+                        self._rail_satisfies_house_color(coord, adjacent1, c),
+                        # then the alien gets off the train
+                        self.get_prop(
+                            name="train_alien_after_color",
+                            descriptor=c,
+                            coord=coord,
                         ).negate(),
                     )
+                    for c in self.colors
                 )
-
-            # Only one of the input directions can be true. The same holds for output directions
-            for io in ("rail_input", "rail_output"):
-                self.theory.add_constraint(
-                    logic.one_of_or_none(self.get_props(name=io, coord=(x, y)))
-                )
-
-            # Each rail connects to two of: another rail, entrance, or exit
-            for direction, opposite_direction, offset_coord in helpers.get_directions(
-                (x, y)
-            ):
-                if self.grid_contains(offset_coord):
-                    self.theory.add_constraint(
-                        logic.implication(
-                            self.get_prop(
-                                name="rail_output", descriptor=direction, coord=(x, y)
-                            ),
-                            logic.one_of(
-                                self.get_prop(
-                                    name="rail_input",
-                                    descriptor=opposite_direction,
-                                    coord=offset_coord,
-                                ),
-                                self.get_prop(name="exit", coord=offset_coord),
-                            ),
-                        )
-                    )
-
-                    self.theory.add_constraint(
-                        logic.implication(
-                            self.get_prop(
-                                name="rail_input", descriptor=direction, coord=(x, y)
-                            ),
-                            logic.one_of(
-                                self.get_prop(
-                                    name="rail_output",
-                                    descriptor=opposite_direction,
-                                    coord=offset_coord,
-                                ),
-                                self.get_prop(name="entrance", coord=offset_coord),
-                            ),
-                        )
-                    )
-
-            # Entrances need a single rail taking input from them
-            parts = []
-            for _, opposite_direction, offset_coord in helpers.get_directions((x, y)):
-                if self.grid_contains(offset_coord):
-                    parts.append(
-                        self.get_prop(
-                            name="rail_input",
-                            descriptor=opposite_direction,
-                            coord=offset_coord,
-                        )
-                    )
-
-            self.theory.add_constraint(
-                logic.implication(
-                    self.get_prop(name="entrance", coord=(x, y)),
-                    logic.one_of(parts),
-                )
+                for adjacent1 in helpers.get_adjacent(coord)
+                if self.grid_contains(adjacent1)
             )
+        )
 
-            # Exits need a single rail outputting to them
-            parts = []
-            for _, opposite_direction, offset_coord in helpers.get_directions((x, y)):
-                if self.grid_contains(offset_coord):
-                    parts.append(
-                        self.get_prop(
-                            name="rail_output",
-                            descriptor=opposite_direction,
-                            coord=offset_coord,
-                        )
-                    )
-
-            self.theory.add_constraint(
-                logic.implication(
-                    self.get_prop(name="exit", coord=(x, y)),
-                    logic.one_of(parts),
-                )
-            )
-
-    def add_rail_state_constraints(self):
-        for coord in helpers.all_coords(self.size):
-            pass
-            # No rail means no train alien
-            self.theory.add_constraint(
-                logic.implication(
-                    self.get_prop(name="rail", coord=coord).negate(),
-                    logic.none_of(
-                        *self.get_props(name="train_alien_before_color", coord=coord),
-                        *self.get_props(name="train_alien_after_color", coord=coord),
-                    ),
-                )
-            )
-
-            # Only one color can be true
-            self.theory.add_constraint(
-                logic.one_of_or_none(
-                    self.get_props(name="train_alien_before_color", coord=coord)
-                )
-            )
-            self.theory.add_constraint(
-                logic.one_of_or_none(
-                    self.get_props(name="train_alien_after_color", coord=coord)
-                )
-            )
-
-            # After state of one rail becomes before state of the next
-            for c in self.colors:
-                for direction, _, offset_coord in helpers.get_directions(coord):
-                    if self.grid_contains(offset_coord):
-                        self.theory.add_constraint(
-                            logic.implication(
-                                self.get_prop(
-                                    name="rail_output",
-                                    descriptor=direction,
-                                    coord=coord,
-                                ),
-                                logic.equal(
-                                    self.get_prop(
-                                        name="train_alien_after_color",
-                                        descriptor=c,
-                                        coord=coord,
-                                    ),
-                                    self.get_prop(
-                                        name="train_alien_before_color",
-                                        descriptor=c,
-                                        coord=offset_coord,
-                                    ),
-                                ),
-                            )
-                        )
-
-            for offset_coord in helpers.get_adjacent(coord):
-                if self.grid_contains(offset_coord):
-                    self.theory.add_constraint(
-                        logic.implication(
-                            self.get_prop(name="entrance", coord=offset_coord),
-                            logic.none_of(
-                                self.get_props(
-                                    name="train_alien_before_color",
-                                    coord=coord,
-                                )
-                            ),
-                        )
-                    )
-                    self.theory.add_constraint(
-                        logic.implication(
-                            self.get_prop(name="exit", coord=offset_coord),
-                            logic.none_of(
-                                self.get_props(
-                                    name="train_alien_after_color",
-                                    coord=coord,
-                                )
-                            ),
-                        )
-                    )
-
-            # Rail satisfies alien -> alien gets on train
-            self.theory.add_constraint(
-                logic.multi_and(
-                    logic.multi_and(
-                        logic.implication(
-                            self._rail_satisfies_alien_color(coord, adjacent1, c),
-                            # then the alien gets on the train
-                            self.get_prop(
-                                name="train_alien_after_color",
-                                descriptor=c,
-                                coord=coord,
-                            ),
-                        )
-                        for c in self.colors
-                    )
+        # No house satisfies rail -> no alien gets off train
+        self.theory.add_constraint(
+            logic.implication(
+                self.get_prop(name="rail", coord=coord)
+                # If no houses satisfy the rail
+                & logic.none_of(
+                    self._rail_satisfies_house_color(coord, adjacent1, c)
+                    for c in self.colors
                     for adjacent1 in helpers.get_adjacent(coord)
                     if self.grid_contains(adjacent1)
-                )
-            )
-
-            # No alien satisfies rail -> no alien gets on train
-            self.theory.add_constraint(
-                logic.implication(
-                    self.get_prop(name="rail", coord=coord)
-                    # If no aliens satisfy the rail
-                    & logic.none_of(
-                        self._rail_satisfies_alien_color(coord, adjacent1, c)
-                        for c in self.colors
-                        for adjacent1 in helpers.get_adjacent(coord)
-                        if self.grid_contains(adjacent1)
-                    ),
-                    # then no alien gets on the train
+                ),
+                # then no alien gets off the train
+                logic.multi_and(
                     logic.implication(
-                        logic.none_of(
-                            self.get_props(
-                                name="train_alien_before_color",
-                                coord=coord,
-                            ),
+                        self.get_prop(
+                            name="train_alien_before_color",
+                            descriptor=c,
+                            coord=coord,
                         ),
-                        logic.none_of(
-                            self.get_props(
-                                name="train_alien_after_color",
-                                coord=coord,
-                            ),
+                        self.get_prop(
+                            name="train_alien_after_color",
+                            descriptor=c,
+                            coord=coord,
                         ),
-                    ),
-                )
-            )
-
-            # Rail satisfies house -> alien gets off train
-            self.theory.add_constraint(
-                logic.multi_and(
-                    logic.multi_and(
-                        logic.implication(
-                            self._rail_satisfies_house_color(coord, adjacent1, c),
-                            # then the alien gets off the train
-                            self.get_prop(
-                                name="train_alien_after_color",
-                                descriptor=c,
-                                coord=coord,
-                            ).negate(),
-                        )
-                        for c in self.colors
                     )
+                    for c in self.colors
+                ),
+            )
+        )
+
+        # No rail satisfies alien -> alien is not satisfied
+        self.theory.add_constraint(
+            logic.implication(
+                self.get_prop(name="alien", coord=coord)
+                # If no rails satisfy the alien
+                & logic.none_of(
+                    self._rail_satisfies_alien_color(adjacent1, coord, c)
+                    for c in self.colors
                     for adjacent1 in helpers.get_adjacent(coord)
                     if self.grid_contains(adjacent1)
-                )
+                ),
+                # then alien is not satisfied
+                self.get_prop(name="alien_satisfied", coord=coord).negate(),
             )
+        )
 
-            # No house satisfies rail -> no alien gets off train
-            self.theory.add_constraint(
-                logic.implication(
-                    self.get_prop(name="rail", coord=coord)
-                    # If no houses satisfy the rail
-                    & logic.none_of(
-                        self._rail_satisfies_house_color(coord, adjacent1, c)
-                        for c in self.colors
-                        for adjacent1 in helpers.get_adjacent(coord)
-                        if self.grid_contains(adjacent1)
-                    ),
-                    # then no alien gets off the train
-                    logic.multi_and(
-                        logic.implication(
-                            self.get_prop(
-                                name="train_alien_before_color",
-                                descriptor=c,
-                                coord=coord,
-                            ),
-                            self.get_prop(
-                                name="train_alien_after_color",
-                                descriptor=c,
-                                coord=coord,
-                            ),
-                        )
-                        for c in self.colors
-                    ),
-                )
+        # No rail satisfies house -> house is not satisfied
+        self.theory.add_constraint(
+            logic.implication(
+                self.get_prop(name="house", coord=coord)
+                # If no rails satisfy the house
+                & logic.none_of(
+                    self._rail_satisfies_house_color(adjacent1, coord, c)
+                    for c in self.colors
+                    for adjacent1 in helpers.get_adjacent(coord)
+                    if self.grid_contains(adjacent1)
+                ),
+                # then house is not satisfied
+                self.get_prop(name="house_satisfied", coord=coord).negate(),
             )
+        )
 
-            # No rail satisfies alien -> alien is not satisfied
-            self.theory.add_constraint(
-                logic.implication(
-                    self.get_prop(name="alien", coord=coord)
-                    # If no rails satisfy the alien
-                    & logic.none_of(
-                        self._rail_satisfies_alien_color(adjacent1, coord, c)
-                        for c in self.colors
-                        for adjacent1 in helpers.get_adjacent(coord)
-                        if self.grid_contains(adjacent1)
-                    ),
-                    # then alien is not satisfied
-                    self.get_prop(name="alien_satisfied", coord=coord).negate(),
-                )
+    def add_satisfaction_constraints(self, coord):
+        # Every alien must be satisfied and
+        # no alien means alien is not satisfied
+        self.theory.add_constraint(
+            logic.equal(
+                self.get_prop(name="alien", coord=coord),
+                self.get_prop(name="alien_satisfied", coord=coord),
             )
+        )
 
-            # No rail satisfies house -> house is not satisfied
-            self.theory.add_constraint(
-                logic.implication(
-                    self.get_prop(name="house", coord=coord)
-                    # If no rails satisfy the house
-                    & logic.none_of(
-                        self._rail_satisfies_house_color(adjacent1, coord, c)
-                        for c in self.colors
-                        for adjacent1 in helpers.get_adjacent(coord)
-                        if self.grid_contains(adjacent1)
-                    ),
-                    # then house is not satisfied
-                    self.get_prop(name="house_satisfied", coord=coord).negate(),
-                )
+        # Every house must be satisfied and
+        # no house means house is not satisfied
+        self.theory.add_constraint(
+            logic.equal(
+                self.get_prop(name="house", coord=coord),
+                self.get_prop(name="house_satisfied", coord=coord),
             )
+        )
 
-    def add_satisfaction_constraints(self):
-        for coord in helpers.all_coords(self.size):
-            # Every alien must be satisfied and
-            # no alien means alien is not satisfied
-            self.theory.add_constraint(
-                logic.equal(
-                    self.get_prop(name="alien", coord=coord),
-                    self.get_prop(name="alien_satisfied", coord=coord),
-                )
-            )
-
-            # Every house must be satisfied and
-            # no house means house is not satisfied
-            self.theory.add_constraint(
-                logic.equal(
-                    self.get_prop(name="house", coord=coord),
-                    self.get_prop(name="house_satisfied", coord=coord),
-                )
-            )
-
-            # No alien means alien is not satisfied
+        # No alien means alien is not satisfied
 
     def _rail_satisfies_alien_color(self, rail_coord, alien_coord, color) -> Var:
         return (
