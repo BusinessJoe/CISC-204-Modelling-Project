@@ -33,4 +33,4 @@ Docker file for developing the course project.
 
     `docker run -t -i -v $(pwd):/cosmicExpress cisc204 /bin/bash`
 
-3. From there the two folders should be connected, everything you do in one automatically updates in the other. For the project you will write the code in your local directory and then run it through the docker command line. A quick test to see if they're working is to create a file in the folder on your computer then use the terminal to see if it also shows up in the docker container.
+3. You can run the model with test cases using `python run.py data/xml/complex.xml` where the file name is any file in the data/xml folder.
