@@ -1,14 +1,13 @@
-import functools
 from nnf import Var, false
 from .lib204 import Encoding
 
 from . import helpers
 from . import logic
 
-ARGS = []
-
 
 class CosmicExpressTheory:
+    """Class for the cosmic express model"""
+
     props: dict[str, dict[tuple[int, int], Var]]
 
     def __init__(self, size: tuple[int, int] = (5, 5), num_colors: int = 2) -> None:
@@ -24,9 +23,11 @@ class CosmicExpressTheory:
 
     @property
     def size(self) -> tuple[int, int]:
+        """Returns the grid's size"""
         return self.num_rows, self.num_cols
 
     def grid_contains(self, coord) -> bool:
+        """True iff the given coordinate is contained in the grid"""
         # coord is an (x, y) tuple, so coord[0] corrisponds to columns and coord[1] to rows.
         return 0 <= coord[0] < self.num_cols and 0 <= coord[1] < self.num_rows
 
@@ -37,28 +38,10 @@ class CosmicExpressTheory:
             - whether the tile is an alien
             - whether the tile is a rail
             - whether the tile's rail outputs to the North
-        and so on. These propositions are created and stored in the self.props dictionary.
+        and so on.
 
-        The key of self.props represents the type of proposition:
-            - A:        the tile is an alien
-            - A_[c]:    the alien is of color [c]
-            - H:        the tile is a house
-            - H_[c]:    the house is of color [c]
-            - O:        the tile is an obstacle
-            - R:        the tile is a rail
-            - RI[d]:    the rail has input from direction [d]
-            - RO[d]:    the rail has input from direction [d]
-            - EN:       the tile is an entrance
-            - EX:       the tile is an exit
-            - V:        the rail is visited during the train's route
-            - SA:       the alien is satisfied (picked up) during the train's route
-            - SH:       the house is satisfied (an alien is dropped off) during the train's route
-            - BTA_[c]   train alien color before a timestep (think about it like the input state)
-            - ATA_[c]   train alien color after a timestep (think about it like the output state)
-
-        The value of each key is a dictionary mapping from grid coordinates (x, y) to a propositional variable.
-
-        To get the variable representing an obstacle at position (2, 3) you would use self.props["O"][2, 3].
+        To get the variable representing an obstacle at position (2, 3) you would use
+        self.get_prop(name="obstacle", coord=(2,3)).
         """
         self._named_props = dict()
 
@@ -119,6 +102,7 @@ class CosmicExpressTheory:
             )
 
     def add_alien_constraints(self, coord) -> None:
+        """Adds contraints related to aliens"""
         # If an alien of any color is present, then an alien is present
         self.theory.add_constraint(
             logic.equal(
@@ -133,6 +117,7 @@ class CosmicExpressTheory:
         )
 
     def add_house_constraints(self, coord) -> None:
+        """Adds contraints related to houses aliens"""
         # If a house of any color is present, then a house is present
         self.theory.add_constraint(
             logic.equal(
@@ -253,6 +238,7 @@ class CosmicExpressTheory:
         )
 
     def add_rail_state_constraints(self, coord):
+        """Adds constraints dealing with the train carriage's color"""
         # No rail means no alien on train
         self.theory.add_constraint(
             logic.implication(
@@ -537,7 +523,8 @@ class CosmicExpressTheory:
         )
 
     @helpers.simple_cache
-    def rail_comes_before(self, p1, p2):
+    def rail_comes_before(self, p1, p2) -> Var:
+        """Returns a Var which is true iff the rail at p1 comes before the rail at p2 in the train's path"""
         # TODO: rewrite this with iteration instead of recursion
         if p1 == p2:
             return false
