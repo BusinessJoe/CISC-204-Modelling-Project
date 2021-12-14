@@ -6,7 +6,7 @@ from . import logic
 
 
 class CosmicExpressTheory:
-    """Class for the cosmic express model"""
+    """Class for the Cosmic Epy xpress model"""
 
     props: dict[str, dict[tuple[int, int], Var]]
 

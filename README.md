@@ -28,4 +28,12 @@ Our model will determine if each alien in a puzzle has been moved from its start
     On Linux:
     `docker run -t -i -v $(pwd):/cosmicExpress cisc204 /bin/bash`
 
-3. You can run the model with test cases using `python run.py data/xml/filename.xml` where the file name is any file in the data/xml folder.
+3. You can run the model with test cases using `python run.py data/xml/filename.xml` where the file name is any file in the data/xml folder. This Docker representation returns all the propositions for each tile, but not a visual display.
+
+## Running the GUI
+
+To use the GUI, install the requirements from `requirements.txt` in a virtual environment, and then run the `run_gui.py` file. The GUI does not run in Docker, so this must be done locally (i.e. in the VSCode terminal).
+
+Note that there are up to ten colors for aliens and houses (indexed from 0-9). To create a board size that is smaller than the current board, the GUI must be restarted.
+
+To create a level, it is crucial to add obstacles on the borders of each board (see Figures 5 and 6 in the project document for examples). Omitting the borders may cause unexpected behavior.
