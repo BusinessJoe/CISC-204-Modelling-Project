@@ -89,7 +89,8 @@ class CosmicExpressTheory:
             self.add_rail_state_constraints(coord)
             self.add_satisfaction_constraints(coord)
 
-            # Each tile can only be an alien, house, obstacle, regular rail, special rail, or nothing.
+            # Each tile can only be an alien, house, obstacle, regular rail,
+            # special rail, or nothing.
             self.theory.add_constraint(
                 logic.one_of_or_none(
                     self.get_prop(name="alien", coord=coord),
@@ -445,6 +446,7 @@ class CosmicExpressTheory:
         )
 
     def add_satisfaction_constraints(self, coord):
+        """Adds constraints dealing with alien/house satisfaction"""
         # Every alien must be satisfied and
         # no alien means alien is not satisfied
         self.theory.add_constraint(
@@ -462,8 +464,6 @@ class CosmicExpressTheory:
                 self.get_prop(name="house_satisfied", coord=coord),
             )
         )
-
-        # No alien means alien is not satisfied
 
     def _rail_satisfies_alien_color(self, rail_coord, alien_coord, color) -> Var:
         return (
@@ -524,7 +524,8 @@ class CosmicExpressTheory:
 
     @helpers.simple_cache
     def rail_comes_before(self, p1, p2) -> Var:
-        """Returns a Var which is true iff the rail at p1 comes before the rail at p2 in the train's path"""
+        """Returns a Var which is true iff the rail at p1
+        comes before the rail at p2 in the train's path"""
         # TODO: rewrite this with iteration instead of recursion
         if p1 == p2:
             return false
@@ -560,9 +561,14 @@ class CosmicExpressTheory:
             self._named_props[name] = {descriptor: prop_dict}
 
     def get_prop(self, *, coord, name, descriptor=None):
+        """Returns the proposition with the given name for the tile at coord.
+        If the proposition is a color or direction then a descriptor should be provided,
+        either as an integer for colors or one of N,E,S,W for directions."""
         return self._named_props[name][descriptor][coord]
 
     def get_props(self, *, coord, name):
+        """Returns a list of propositions with the given name for the tile at coord.
+        This only works for color or direction propositions."""
         if name:
             descriptor_dicts = [
                 v for k, v in self._named_props[name].items() if k is not None

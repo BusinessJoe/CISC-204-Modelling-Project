@@ -1,10 +1,12 @@
 import sys
+from pprint import pprint
 from src.file_reader import read_file
 
 sys.setrecursionlimit(10 ** 6)
 
 
 def summarize(solution):
+    """Summarizes the solution by printing out certain propositions"""
     # Do some filtering
     solution = {k: v for k, v in solution.items() if isinstance(k, str)}
 
@@ -47,21 +49,20 @@ def summarize(solution):
 
 
 if __name__ == "__main__":
-    from pprint import pprint
-
+    # Read model from file
     with open(sys.argv[1], encoding="utf8") as f:
-        T = read_file(f, True)
+        encoding = read_file(f, True)
 
-    satisfiable = T.is_satisfiable()
+    satisfiable = encoding.is_satisfiable()
     print(f"Satisfiable: {satisfiable}\n")
 
     if satisfiable:
-        num_solutions = T.count_solutions()
+        num_solutions = encoding.count_solutions()
         if num_solutions == 1:
             print("There is 1 solution.\n")
         else:
             print(f"There are {num_solutions} solutions.\n")
         print("One solution is:")
-        solution = T.solve()
+        s = encoding.solve()
 
-        summarize(solution)
+        summarize(s)
